@@ -25,6 +25,7 @@ void init_pproc_renderer() {
     u32 width = game_state->window.width;
     u32 height = game_state->window.height;
 
+    /*
     game_state->pproc_renderer = (pproc_renderer_s) {
         .back_buffer = create_fbo(width, height, 1),
         .screen_quad = create_mesh(vertices, uvs, NULL, NULL, indices, ARRAY_SIZE(indices), ARRAY_SIZE(vertices))
@@ -35,11 +36,12 @@ void init_pproc_renderer() {
             GL_COLOR_ATTACHMENT0,
             GL_RGB16F,
             GL_RGB);
+    */
 }
 
-void render_post_processing(fbo_s* target_buffer) {
-    fbo_s* back_buffer = &game_state->pproc_renderer.back_buffer;
-    mesh_s* quad = &game_state->pproc_renderer.screen_quad;
+void render_post_processing(pproc_renderer_s* renderer, shader_s* shader, fbo_s* target_buffer) {
+    fbo_s* back_buffer = &renderer->back_buffer;
+    mesh_s* quad = &renderer->screen_quad;
 
     glDisable(GL_DEPTH_TEST);
 
@@ -59,15 +61,15 @@ void render_post_processing(fbo_s* target_buffer) {
     glBindVertexArray(quad->vao);
     mesh_enable_attributes(quad);
 
-    shader_start(&game_state->post_processing_shader);
+    shader_start(shader);
 
-    game_state->post_processing_shader.load_uniforms(NULL);
+    shader->load_uniforms(NULL);
 
     glDrawElements(GL_TRIANGLES, quad->index_count, GL_UNSIGNED_INT, NULL);
 
     shader_stop();
 
-    mesh_disable_attributes(&game_state->pproc_renderer.screen_quad);
+    mesh_disable_attributes(quad);
     glBindVertexArray(0);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);

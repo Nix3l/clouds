@@ -3,6 +3,7 @@
 
 #include "framebuffer/fbo.h"
 #include "mesh/mesh.h"
+#include "shader/shader.h"
 
 typedef struct {
     fbo_s back_buffer;
@@ -11,6 +12,6 @@ typedef struct {
 
 void init_pproc_renderer();
 
-void render_post_processing(fbo_s* fbo);
+void render_post_processing(pproc_renderer_s* renderer, shader_s* shader, fbo_s* fbo);
 
 #endif

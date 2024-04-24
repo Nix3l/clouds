@@ -89,7 +89,7 @@ void arena_clear(arena_s* arena) {
     arena->size = 0;
     // NOTE(nix3l): no real need to zero the memory here, arena->size = 0 is enough
     // might change in case of a performance bottleneck, although not very likely
-    MEM_ZERO(arena->data, arena->capacity);
+    // MEM_ZERO(arena->data, arena->capacity);
 }
 
 void arena_free(arena_s* arena) {
