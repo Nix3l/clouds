@@ -2,6 +2,7 @@
 #define SHADER_H
 
 #include "base.h"
+#include "memory/memory.h"
 
 typedef struct {
     // metadata
@@ -31,7 +32,8 @@ shader_s load_and_create_shader(
         char* name,
         char* vertex_path, char* fragment_path,
         void (*bind_attributes) (),
-        void (*load_uniforms) (void*));
+        void (*load_uniforms) (void*),
+        arena_s* arena);
 
 void destroy_shader(shader_s* shader);
 

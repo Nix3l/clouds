@@ -4,7 +4,7 @@
 #include "util/log.h"
 #include "memory/memory.h"
 
-fbo_s create_fbo(u32 width, u32 height, usize num_textures) {
+fbo_s create_fbo(u32 width, u32 height, usize num_textures, arena_s* arena) {
     fbo_s fbo;
 
     glGenFramebuffers(1, &fbo.id);
@@ -13,10 +13,10 @@ fbo_s create_fbo(u32 width, u32 height, usize num_textures) {
     fbo.height = height;
     fbo.num_textures = num_textures;
 
-    fbo.textures = arena_push(&game_state->fbo_arena, num_textures * sizeof(fbo_texture_s));
+    fbo.textures = arena_push(arena, num_textures * sizeof(fbo_texture_s));
     MEM_ZERO(fbo.textures, num_textures * sizeof(fbo_texture_s));
 
-    fbo.attachments = arena_push(&game_state->fbo_arena, num_textures * sizeof(GLenum));
+    fbo.attachments = arena_push(arena, num_textures * sizeof(GLenum));
 
     return fbo;
 }

@@ -12,6 +12,13 @@
 // TODO(nix3l): redo this whole thing to somehow use the executable's absolute path
 // for now however i can do the hacky approach
 
+static usize get_file_length(FILE* file) {
+    fseek(file, 0L, SEEK_END);
+    usize length = ftell(file);
+    rewind(file);
+    return length;
+}
+
 char* platform_load_text_from_file(char* filename, usize* out_length, arena_s* arena) {
     FILE* file = fopen(filename, "r");
     if(!file) {
@@ -19,9 +26,7 @@ char* platform_load_text_from_file(char* filename, usize* out_length, arena_s* a
         return NULL;
     }
 
-    fseek(file, 0L, SEEK_END);
-    usize length = ftell(file);
-    rewind(file);
+    usize length = get_file_length(file);
 
     if(!length) {
         LOG_ERR("failed to read length of [%s]: err %d\n%s\n", filename, errno, strerror(errno));
@@ -63,25 +68,26 @@ char** platform_load_lines_from_file(char* filepath, usize* out_num_lines, arena
 
     usize num_lines = 0;
 
-    // NOTE(nix3l): not trying to be particularly fast with this
-    // as i just want to ge this up and running at the moment
-
-    char* temp_mem = game_memory->transient_storage;
-
     // load the entire file into transient memory
     // and get the number of new lines in the process
-    usize length;
-    for(length = 0; !feof(file); length ++)
-        if((temp_mem[length] = fgetc(file)) == '\n')
+    usize length = get_file_length(file);
+    char* file_contents = arena_push(arena, length + 1);
+
+    usize read_length = fread(file_contents, 1, length, file);
+    if(read_length != length) {
+        LOG_ERR("failed to read contents of [%s]: err %d\n%s\n", filepath, errno, strerror(errno));
+        fclose(file);
+        return NULL;
+    }
+
+    for(usize i = 0; i < length; i ++)
+        if(file_contents[i] == '\n')
             num_lines ++;
 
-    temp_mem[length + 1] = '\0';
-
+    file_contents[length + 1] = '\0';
     fclose(file);
 
     char** output = arena_push(arena, num_lines * sizeof(char*));
-    char* file_contents = arena_push(arena, length + 1);
-    strncpy(file_contents, temp_mem, length + 1);
 
     char* curr_str_view = file_contents;
     output[0] = file_contents;

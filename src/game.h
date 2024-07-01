@@ -25,7 +25,7 @@ typedef struct {
 
 typedef struct {
     // ARENAS
-    arena_s frame_arena;
+    arena_s frame_arena; // for any and all memory that needs to be allocated and used for one frame only
     arena_s shader_arena; // mostly contains text for shader paths/names
     arena_s fbo_arena; // contains texture metadata for fbos
     arena_s params_arena; // contains text from params file

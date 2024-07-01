@@ -47,6 +47,7 @@ static void show_debug_stats_window() {
     igText("of which parameters: %u/%u\n", game_state->params_arena.size, game_state->params_arena.capacity);
     igText("of which textures: %u/%u\n", game_state->texture_arena.size, game_state->texture_arena.capacity);
     igText("of which meshes: %u/%u\n", game_state->mesh_arena.size, game_state->mesh_arena.capacity);
+    igText("of which frame: %u/%u\n", game_state->frame_arena.size, game_state->frame_arena.capacity);
     igUnindent(12.0f);
 
     igEnd();
@@ -110,20 +111,19 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
 
     // PARTITIONING MEMORY
     game_state = game_memory->permenant_storage;
-    MEM_ZERO_STRUCT(game_state);
 
     void* memory = game_memory->permenant_storage + sizeof(game_state_s);
     usize remaining_memory = permenant_memory_to_allocate - sizeof(game_state_s);
-    
-    game_state->shader_arena = partition_permenant_memory(&memory, KILOBYTES(10), &remaining_memory);
-    game_state->fbo_arena = partition_permenant_memory(&memory, KILOBYTES(1), &remaining_memory);
-    game_state->params_arena = partition_permenant_memory(&memory, KILOBYTES(4), &remaining_memory);
-    game_state->texture_arena = partition_permenant_memory(&memory, KILOBYTES(4), &remaining_memory);
-    game_state->mesh_arena = partition_permenant_memory(&memory, KILOBYTES(8), &remaining_memory);
-    game_state->frame_arena = partition_permenant_memory(&memory, remaining_memory, &remaining_memory);
+
+    game_state->shader_arena  = partition_permenant_memory(&memory, KILOBYTES(1),     &remaining_memory);
+    game_state->fbo_arena     = partition_permenant_memory(&memory, KILOBYTES(1),     &remaining_memory);
+    game_state->params_arena  = partition_permenant_memory(&memory, KILOBYTES(4),     &remaining_memory);
+    game_state->texture_arena = partition_permenant_memory(&memory, KILOBYTES(4),     &remaining_memory);
+    game_state->mesh_arena    = partition_permenant_memory(&memory, KILOBYTES(8),     &remaining_memory);
+    game_state->frame_arena   = partition_permenant_memory(&memory, remaining_memory, &remaining_memory);
 
     // IO
-    create_window(1920, 1080, "water");
+    create_window(1600, 900, "clouds");
     init_input();
 
     // SHADERS

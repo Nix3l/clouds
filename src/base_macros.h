@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #if !defined(ASSERT_BREAK)
-#   define ASSERT_BREAK(_x) do { fprintf(stderr, "assertion `%s` failed [%s:%u]\n", #_x, __FILE__, __LINE__); *(int*)0=0; } while(0) // crash (ouch)
+#   define ASSERT_BREAK(_x) do { fprintf(stderr, "assertion `%s` failed [%s:%u]\n", #_x, __FILE__, __LINE__); /**(int*)0=0*/exit(1); } while(0) // crash (ouch)
 #endif
 
 #if ENABLE_ASSERT

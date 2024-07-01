@@ -88,7 +88,7 @@ usize arena_remaining_capacity(arena_s* arena) {
 void arena_clear(arena_s* arena) {
     arena->size = 0;
     // NOTE(nix3l): no real need to zero the memory here, arena->size = 0 is enough
-    // might change in case of a performance bottleneck, although not very likely
+    // makes it way too slow when clearing large arenas
     // MEM_ZERO(arena->data, arena->capacity);
 }
 

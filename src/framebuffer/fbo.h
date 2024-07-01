@@ -2,6 +2,7 @@
 #define FBO_H
 
 #include "base.h"
+#include "memory/memory.h"
 
 typedef struct {
     GLuint id;
@@ -25,7 +26,7 @@ typedef struct {
     GLenum* attachments;
 } fbo_s;
 
-fbo_s create_fbo(u32 width, u32 height, usize num_textures);
+fbo_s create_fbo(u32 width, u32 height, usize num_textures, arena_s* arena);
 void destroy_fbo(fbo_s* fbo);
 
 void fbo_create_texture(fbo_s* fbo, GLenum attachment_type, GLint internal_format, GLenum format);

@@ -80,16 +80,17 @@ shader_s load_and_create_shader(
         char* name,
         char* vertex_path, char* fragment_path,
         void (*bind_attributes) (),
-        void (*load_uniforms) (void*)) {
+        void (*load_uniforms) (void*),
+        arena_s* arena) {
     usize vertex_length, fragment_length;
-    char* vertex_src = platform_load_text_from_file(vertex_path, &vertex_length, &game_state->shader_arena);
-    char* fragment_src = platform_load_text_from_file(fragment_path, &fragment_length, &game_state->shader_arena);
+    char* vertex_src = platform_load_text_from_file(vertex_path, &vertex_length, arena);
+    char* fragment_src = platform_load_text_from_file(fragment_path, &fragment_length, arena);
 
     shader_s shader = create_shader(name, vertex_src, fragment_src, bind_attributes, load_uniforms);
     shader.vertex_full_path = vertex_path;
     shader.fragment_full_path = fragment_path;
 
-    arena_pop(&game_state->shader_arena, vertex_length + fragment_length);
+    arena_pop(arena, vertex_length + fragment_length);
 
     return shader;
 }

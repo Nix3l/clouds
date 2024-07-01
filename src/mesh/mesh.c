@@ -258,10 +258,6 @@ mesh_s primitive_plane_mesh(v3f bottom_left, v2i num_vertices, v2f world_size, a
     // therefore 6 indices per quad
     u32 total_indices = total_faces * 6;
 
-    // OK SO ive narrowed the problem down to garbage data
-    // for some reason after generating a certain number of faces
-    // the data just suddenly becomes completely garbage??
-
     f32* vertices = arena_push(arena, sizeof(f32) * total_vertices * 3);
     f32* uvs      = arena_push(arena, sizeof(f32) * total_vertices * 2);
     f32* normals  = arena_push(arena, sizeof(f32) * total_vertices * 3);

@@ -32,7 +32,6 @@ char* platform_get_file_extension(char* filepath);
 
 // prepends the RESOURCES_PATH to the given filename
 char* platform_get_res_path(char* filename, arena_s* arena);
-    //
 // TODO(nix3l): char* platform_get_shaders_path(char* filename, arena_s* arena);
 
 #endif
