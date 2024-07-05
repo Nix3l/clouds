@@ -4,6 +4,8 @@
 #include "base.h"
 #include "memory/memory.h"
 
+typedef GLuint uniform_t;
+
 typedef struct {
     // metadata
     char* name;
@@ -13,11 +15,12 @@ typedef struct {
     GLuint program_id;
 
     // NOTE(nix3l): there might be no real reason to hold on to these after creation
+    // doesnt hurt to keep them i guess
     // see create_shader in shader.c for more info
     GLuint vertex_id;
     GLuint fragment_id;
 
-    void (*load_uniforms) (void*);
+    void (*load_uniforms) (void*); // optional user data can be passed as a parameter
 } shader_s;
 
 // takes in source code and compiles a shader accordingly
@@ -42,14 +45,14 @@ void shader_stop();
 
 void shader_bind_attribute(shader_s* shader, GLuint attribute, char* attribute_name);
 
-GLuint shader_get_uniform(shader_s* shader, char* uniform_name);
-void shader_load_int(GLuint uniform, i32 value);
-void shader_load_uint(GLuint uniform, u32 value);
-void shader_load_float(GLuint uniform, f32 value);
-void shader_load_bool(GLuint uniform, bool value);
-void shader_load_vec2(GLuint uniform, vec2s value);
-void shader_load_vec3(GLuint uniform, vec3s value);
-void shader_load_mat4(GLuint uniform, mat4s value);
+uniform_t shader_get_uniform(shader_s* shader, char* uniform_name);
+void shader_load_int(uniform_t uniform, i32 value);
+void shader_load_uint(uniform_t uniform, u32 value);
+void shader_load_float(uniform_t uniform, f32 value);
+void shader_load_bool(uniform_t uniform, bool value);
+void shader_load_vec2(uniform_t uniform, vec2s value);
+void shader_load_vec3(uniform_t uniform, vec3s value);
+void shader_load_mat4(uniform_t uniform, mat4s value);
 
 // TODO(nix3l): make wrapper functions for glUniform*v()
 

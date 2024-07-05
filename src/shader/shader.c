@@ -111,8 +111,8 @@ void shader_bind_attribute(shader_s* shader, GLuint attribute, char* attribute_n
     glBindAttribLocation(shader->program_id, attribute, attribute_name);
 }
 
-GLuint shader_get_uniform(shader_s* shader, char* uniform_name) {
-    GLuint id = glGetUniformLocation(shader->program_id, uniform_name);
+uniform_t shader_get_uniform(shader_s* shader, char* uniform_name) {
+    uniform_t id = glGetUniformLocation(shader->program_id, uniform_name);
     
     if(id == (GLuint)-1)
         LOG_ERR("couldnt load uniform with name [%s] in shader [%s]\n", uniform_name, shader->name);
@@ -120,30 +120,30 @@ GLuint shader_get_uniform(shader_s* shader, char* uniform_name) {
     return id;
 }
 
-void shader_load_int(GLuint uniform, i32 value) {
+void shader_load_int(uniform_t uniform, i32 value) {
     glUniform1i(uniform, value);
 }
   
-void shader_load_uint(GLuint uniform, u32 value) {
+void shader_load_uint(uniform_t uniform, u32 value) {
     glUniform1ui(uniform, value);
 }
 
-void shader_load_float(GLuint uniform, f32 value) {
+void shader_load_float(uniform_t uniform, f32 value) {
     glUniform1f(uniform, value);
 }
 
-void shader_load_bool(GLuint uniform, bool value) {
+void shader_load_bool(uniform_t uniform, bool value) {
     glUniform1i(uniform, value ? 1 : 0);
 }
 
-void shader_load_vec2(GLuint uniform, vec2s value) {
+void shader_load_vec2(uniform_t uniform, vec2s value) {
     glUniform2f(uniform, value.x, value.y);
 }
 
-void shader_load_vec3(GLuint uniform, vec3s value) {
+void shader_load_vec3(uniform_t uniform, vec3s value) {
     glUniform3f(uniform, value.x, value.y, value.z);
 }
 
-void shader_load_mat4(GLuint uniform, mat4s value) {
+void shader_load_mat4(uniform_t uniform, mat4s value) {
     glUniformMatrix4fv(uniform, 1, GL_FALSE, (float*) value.raw);
 }

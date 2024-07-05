@@ -330,3 +330,41 @@ mesh_s primitive_plane_mesh(v3f bottom_left, v2i num_vertices, v2f world_size, a
 
     return mesh;
 }
+
+mesh_s primitive_cube_mesh() {
+    f32 vertices[] = {
+        0.0f, -1.0f, 0.0f, // lower left
+        0.0f, -1.0f, 1.0f, // upper left
+        0.0f,  1.0f, 0.0f, // lower right
+        0.0f,  1.0f, 1.0f, // upper right
+        1.0f, -1.0f, 0.0f, // lower front left
+        1.0f, -1.0f, 1.0f, // upper front left
+        1.0f,  1.0f, 1.0f, // lower front right
+        1.0f,  1.0f, 0.0f  // upper front right
+    };
+
+    u32 indices[] = {
+        0, 2, 3,
+        3, 1, 0,
+        0, 1, 4,
+        4, 1, 5,
+        4, 5, 7,
+        7, 5, 6,
+        7, 6, 3,
+        3, 2, 7,
+        1, 3, 5,
+        6, 5, 3,
+        2, 0, 4,
+        4, 7, 2
+    };
+
+    return create_mesh(
+            vertices,
+            NULL,
+            NULL,
+            NULL,
+            indices,
+            ARRAY_SIZE(indices),
+            ARRAY_SIZE(vertices)
+        );
+}

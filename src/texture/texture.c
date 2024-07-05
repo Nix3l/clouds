@@ -2,8 +2,9 @@
 #include "util/log.h"
 #include "platform/platform.h"
 
-static void load_image_stb(char* filepath, GLenum target) {
+static void load_image_stb(char* filepath, GLenum target, texture_s* texture) {
     i32 width, height, num_channels;
+    // TODO(nix3l): make this use stbi_load_from_memory so we actually make use of the permenant data 
     unsigned char* data = stbi_load(filepath, &width, &height, &num_channels, 0);
 
     if(!data) {
@@ -14,6 +15,7 @@ static void load_image_stb(char* filepath, GLenum target) {
 
     GLenum internal_format, format;
 
+    // always assume 16 bit float values because who even cares
     if(num_channels == 1) {
         internal_format = GL_RED;
         format = GL_R16F;
@@ -43,6 +45,14 @@ static void load_image_stb(char* filepath, GLenum target) {
             GL_UNSIGNED_BYTE,
             data);
 
+    if(texture) {
+        texture->width = width;
+        texture->height = width;
+
+        texture->internal_format = internal_format;
+        texture->data_format = format;
+    }
+
     stbi_image_free(data);
 }
 
@@ -54,7 +64,7 @@ texture_s create_texture(char* filename, arena_s* arena) {
     glGenTextures(1, &texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    load_image_stb(filepath, GL_TEXTURE_2D);
+    load_image_stb(filepath, GL_TEXTURE_2D, &texture);
 
     texture.full_path = filepath;
     // NOTE(nix3l): assuming that the file name is in the arena already
@@ -63,6 +73,68 @@ texture_s create_texture(char* filename, arena_s* arena) {
     // TODO(nix3l): parameters
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    return texture;
+}
+
+texture_3d_s create_texture_3d(i32 width, i32 height, i32 depth, void* data) {
+    texture_3d_s texture;
+
+    texture.name = NULL;
+
+    texture.width  = width;
+    texture.height = height;
+    texture.depth  = depth;
+    
+    texture.internal_format = GL_RGB;
+    texture.data_format = GL_RGB16F;
+
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_3D, texture.id);
+
+    glTexImage3D(
+            GL_TEXTURE_3D,
+            0,
+            texture.internal_format,
+            width,
+            height,
+            depth,
+            0,
+            texture.data_format,
+            GL_FLOAT,
+            data);
+
+    glBindTexture(GL_TEXTURE_3D, 0);
+    return texture;
+}
+
+texture_3d_s create_texture_3d_format(i32 width, i32 height, i32 depth, GLenum internal_format, GLenum data_format, void* data) {
+    texture_3d_s texture;
+
+    texture.name = NULL;
+
+    texture.width  = width;
+    texture.height = height;
+    texture.depth  = depth;
+    
+    texture.internal_format = internal_format;
+    texture.data_format     = data_format;
+
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_3D, texture.id);
+
+    glTexImage3D(
+            GL_TEXTURE_3D,
+            0,
+            texture.internal_format,
+            width,
+            height,
+            depth,
+            0,
+            texture.data_format,
+            GL_FLOAT,
+            data);
+
+    glBindTexture(GL_TEXTURE_3D, 0);
     return texture;
 }
 
@@ -82,6 +154,8 @@ texture_s create_cubemap(char** filenames, arena_s* arena) {
             continue;
         }
 
+        // assume all cubemaps are just rgb
+        // because honestly who even cares
         glTexImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
             0,
@@ -111,5 +185,9 @@ texture_s create_cubemap(char** filenames, arena_s* arena) {
 }
 
 void destroy_texture(texture_s* texture) {
+    glDeleteTextures(1, &texture->id);
+}
+
+void destroy_texture_3d(texture_3d_s* texture) {
     glDeleteTextures(1, &texture->id);
 }

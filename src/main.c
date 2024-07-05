@@ -1,6 +1,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 
+// TODO(nix3l): change the renderer to be a post processing effect
+// TODO(nix3l): figure out 3D textures
+
 #include "game.h"
+#include "texture/texture.h"
 #include "util/log.h"
 #include "util/math.h"
 
@@ -59,6 +63,12 @@ static void show_settings_window() {
 
     igBegin("settings", &game_state->show_settings_window, ImGuiWindowFlags_None);
     // SETTINGS
+
+    if(igCollapsingHeader_TreeNodeFlags("camera", ImGuiTreeNodeFlags_None)) {
+        igDragFloat("sensetivity", &game_state->camera.sens, 10.0f, 0.0f, MAX_f32, "%.0f", ImGuiSliderFlags_None);
+        igDragFloat("move speed", &game_state->camera.speed, 1.0f, 0.0f, MAX_f32, "%.0f", ImGuiSliderFlags_None);
+    }
+
     igEnd();
 }
 
@@ -127,17 +137,18 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     init_input();
 
     // SHADERS
+    init_cloud_shader();
 
     // RENDERER
     game_state->camera = (camera_s) {
-        .position   = VECTOR_3(0.0f, 12.0f, 0.0f),
-        .rotation   = VECTOR_3(0.0f, 180.0f, 0.0f),
+        .position   = VECTOR_3(0.0f, 0.0f, 0.0f),
+        .rotation   = VECTOR_3(0.0f, 0.0f, 0.0f),
         
         .fov        = 70.0f,
         .near_plane = 0.001f,
         .far_plane  = 1500.0f,
 
-        .speed      = 24.0f,
+        .speed      = 100.0f,
         .sens       = 7500.0f
     };
 
@@ -147,6 +158,14 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
         .intensity = 0.9f
     };
 
+    init_cloud_renderer();
+
+    // VOLUMES
+    game_state->volume = (cloud_volume_s) {
+        .position = VECTOR_3(0.0f, -80.0f, -350.0f),
+        .scale    = VECTOR_3(128.0f, 64.0f, 128.0f)
+    };
+
     // GUI
     init_imgui();
     game_state->time_scale = 1.0f;
@@ -154,6 +173,8 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     glfwSetInputMode(game_state->window.glfw_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     // LOAD PARAMETERS
+    
+    // OTHER
 }
 
 static void terminate_game() {
@@ -169,12 +190,14 @@ int main(void) {
     init_game_state(GIGABYTES(1), MEGABYTES(16));
 
     while(!glfwWindowShouldClose(game_state->window.glfw_window)) {
+        // UPDATE
         update_frame_stats();
 
         update_camera(&game_state->camera);
 
         // RENDER
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        render_cloud_volume(&game_state->volume, NULL);
 
         update_imgui();
         show_debug_stats_window();

@@ -12,8 +12,11 @@
 #include "shader/shader.h"
 #include "entity/entity.h"
 #include "render/pproc_renderer.h"
+#include "render/clouds_renderer.h"
 #include "camera/camera.h"
 #include "light/light.h"
+#include "clouds/clouds.h"
+#include "shader/clouds_shader.h"
 
 typedef struct {
     usize permenant_storage_size;
@@ -47,6 +50,7 @@ typedef struct {
     u32 fps;
 
     // SHADERS
+    cloud_shader_s cloud_shader;
 
     // TIME SCALE
     f32 time_scale;
@@ -54,6 +58,11 @@ typedef struct {
     // RENDERER
     camera_s camera;
     directional_light_s sun;
+
+    cloud_renderer_s cloud_renderer;
+
+    // CLOUDS
+    cloud_volume_s volume;
 
     // IMGUI
     struct ImGuiContext* imgui_ctx;
