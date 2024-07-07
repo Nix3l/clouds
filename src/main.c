@@ -1,10 +1,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 // TODO(nix3l): change the renderer to be a post processing effect
-// TODO(nix3l): figure out 3D textures
+// TODO(nix3l): render the noise into a 3D texture
 
 #include "game.h"
-#include "texture/texture.h"
 #include "util/log.h"
 #include "util/math.h"
 
@@ -161,10 +160,11 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     init_cloud_renderer();
 
     // VOLUMES
-    game_state->volume = (cloud_volume_s) {
-        .position = VECTOR_3(0.0f, -80.0f, -350.0f),
-        .scale    = VECTOR_3(128.0f, 64.0f, 128.0f)
-    };
+    game_state->volume = create_cloud_volume(128, 128, 128, 32);
+    game_state->volume.position = VECTOR_3(0.0f, -80.0f, -350.0f);
+    game_state->volume.scale = VECTOR_3(128.0f, 64.0f, 128.0f);
+
+    render_cloud_noise(&game_state->volume, &game_state->frame_arena);
 
     // GUI
     init_imgui();

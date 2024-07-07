@@ -14,11 +14,10 @@ static GLuint compile_shader(char* src_code, GLuint shader_type) {
     glGetShaderiv(id, GL_COMPILE_STATUS, &success);
 
     if(!success) {
-        // TODO(nix3l): kinda dumb to have this have a fixed size like this.
-        // is there a better solution?
+        // kinda dumb to have this have a fixed size like this, but it works
         char log[512];
         glGetShaderInfoLog(id, sizeof(log), NULL, log);
-        LOG_ERR("failed to compile %s shader:\n%s\n", shader_type == GL_VERTEX_SHADER ? "vertex" : "fragment", log);
+        LOG_ERR("failed to compile %s shader:\n%s\n", shader_type == GL_COMPUTE_SHADER ? "compute" : shader_type == GL_VERTEX_SHADER ? "vertex" : "fragment", log);
     }
 
     return id;
@@ -95,7 +94,49 @@ shader_s load_and_create_shader(
     return shader;
 }
 
+compute_shader_s create_compute_shader(char* src, v3i work_groups) {
+    compute_shader_s shader;
+
+    shader.work_groups = work_groups;
+
+    shader.program_id = glCreateProgram();
+
+    GLuint shader_id = compile_shader(src, GL_COMPUTE_SHADER);
+    glAttachShader(shader.program_id, shader_id);
+
+    glLinkProgram(shader.program_id);
+    glValidateProgram(shader.program_id);
+
+    int success;
+    glGetProgramiv(shader.program_id, GL_LINK_STATUS, &success);
+
+    if(!success) {
+        char log[512];
+        glGetProgramInfoLog(shader.program_id, 512, NULL, log);
+        LOG_ERR("failed to link compute shader:\n%s\n", log);
+    }
+
+    glDetachShader(shader.program_id, shader_id);
+    glDeleteShader(shader_id);
+
+    return shader;
+}
+
+compute_shader_s load_and_create_compute_shader(char* src_path, v3i work_groups, arena_s* arena) {
+    usize src_length;
+    char* src = platform_load_text_from_file(src_path, &src_length, arena);
+
+    compute_shader_s shader = create_compute_shader(src, work_groups);
+
+    arena_pop(arena, src_length);
+    return shader;
+}
+
 void destroy_shader(shader_s* shader) {
+    glDeleteProgram(shader->program_id);
+}
+
+void destroy_compute_shader(compute_shader_s* shader) {
     glDeleteProgram(shader->program_id);
 }
 
@@ -107,6 +148,20 @@ void shader_stop() {
     glUseProgram(0);
 }
 
+void compute_shader_start(compute_shader_s* shader) {
+    glUseProgram(shader->program_id);
+}
+
+void compute_shader_stop() {
+    glUseProgram(0);
+}
+
+void compute_shader_dispatch(compute_shader_s* shader) {
+    glDispatchCompute(shader->work_groups.x, shader->work_groups.y, shader->work_groups.z);
+    // TODO(nix3l): look into this later
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+}
+
 void shader_bind_attribute(shader_s* shader, GLuint attribute, char* attribute_name) {
     glBindAttribLocation(shader->program_id, attribute, attribute_name);
 }
@@ -116,6 +171,15 @@ uniform_t shader_get_uniform(shader_s* shader, char* uniform_name) {
     
     if(id == (GLuint)-1)
         LOG_ERR("couldnt load uniform with name [%s] in shader [%s]\n", uniform_name, shader->name);
+
+    return id;
+}
+
+uniform_t compute_shader_get_uniform(compute_shader_s* shader, char* uniform_name) {
+    uniform_t id = glGetUniformLocation(shader->program_id, uniform_name);
+    
+    if(id == (GLuint)-1)
+        LOG_ERR("couldnt load uniform with name [%s] in compute shader\n", uniform_name);
 
     return id;
 }

@@ -4,6 +4,10 @@
 #include "base.h"
 #include "memory/memory.h"
 
+// TODO(nix3l): is this the best way of doing compute shaders?
+// they have a lot of similarities with normal shaders
+// so it feels like theres a lot of redundant code but idk
+
 typedef GLuint uniform_t;
 
 typedef struct {
@@ -23,6 +27,12 @@ typedef struct {
     void (*load_uniforms) (void*); // optional user data can be passed as a parameter
 } shader_s;
 
+typedef struct {
+    v3i work_groups;
+
+    GLuint program_id;
+} compute_shader_s;
+
 // takes in source code and compiles a shader accordingly
 shader_s create_shader(
         char* name,
@@ -38,14 +48,24 @@ shader_s load_and_create_shader(
         void (*load_uniforms) (void*),
         arena_s* arena);
 
+compute_shader_s create_compute_shader(char* src, v3i work_groups);
+compute_shader_s load_and_create_compute_shader(char* src_path, v3i work_groups, arena_s* arena);
+
 void destroy_shader(shader_s* shader);
+void destroy_compute_shader(compute_shader_s* shader);
 
 void shader_start(shader_s* shader);
 void shader_stop();
 
+void compute_shader_start(compute_shader_s* shader);
+void compute_shader_stop();
+
+void compute_shader_dispatch(compute_shader_s* shader);
+
 void shader_bind_attribute(shader_s* shader, GLuint attribute, char* attribute_name);
 
 uniform_t shader_get_uniform(shader_s* shader, char* uniform_name);
+uniform_t compute_shader_get_uniform(compute_shader_s* shader, char* uniform_name);
 void shader_load_int(uniform_t uniform, i32 value);
 void shader_load_uint(uniform_t uniform, u32 value);
 void shader_load_float(uniform_t uniform, f32 value);
