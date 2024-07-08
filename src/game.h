@@ -59,6 +59,9 @@ typedef struct {
     camera_s camera;
     directional_light_s sun;
 
+    mesh_s screen_quad;
+    fbo_s screen_buffer;
+
     cloud_renderer_s cloud_renderer;
 
     // CLOUDS

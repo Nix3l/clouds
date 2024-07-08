@@ -25,6 +25,8 @@ void init_pproc_renderer() {
     u32 width = game_state->window.width;
     u32 height = game_state->window.height;
 
+    game_state->screen_quad = create_mesh(vertices, uvs, NULL, NULL, indices, ARRAY_SIZE(indices), ARRAY_SIZE(vertices));
+
     /*
     game_state->pproc_renderer = (pproc_renderer_s) {
         .back_buffer = create_fbo(width, height, 1),

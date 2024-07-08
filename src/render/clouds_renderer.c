@@ -4,13 +4,18 @@
 
 void init_cloud_renderer() {
     game_state->cloud_renderer = (cloud_renderer_s) {
-        // .mesh = primitive_cube_mesh(),
-        .mesh = load_mesh_from_file("cube.glb", &game_state->mesh_arena),
+        .back_buffer = create_fbo(
+                game_state->window.width,
+                game_state->window.height,
+                1,
+                &game_state->fbo_arena),
         .noise_compute = load_and_create_compute_shader(
                 "shader/noise/worley.comp",
                 (v3i) { .x = 128, .y = 128, .z = 128 },
                 &game_state->frame_arena),
     };
+
+    fbo_create_texture(&game_state->cloud_renderer.back_buffer, GL_COLOR_ATTACHMENT0, GL_RGB16F, GL_RGB);
 
     cloud_renderer_s* renderer = &game_state->cloud_renderer;
     compute_shader_s* shader = &game_state->cloud_renderer.noise_compute;
@@ -29,6 +34,8 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     f32* point_data = arena_push(arena, 3 * sizeof(f32) * total_points);
     f32* curr_point = point_data;
 
+    // TODO(nix3l): seed
+
     for(u32 z = 0; z < volume->cells_per_axis; z ++) {
         for(u32 y = 0; y < volume->cells_per_axis; y ++) {
             for(u32 x = 0; x < volume->cells_per_axis; x ++) {
@@ -44,6 +51,8 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
 
     compute_shader_start(shader);
 
+    shader_load_int(compute_shader_get_uniform(shader, "volume"), 1);
+
     // NOTE(nix3l): not sure if its smart to generate a storage buffer
     // every time we generate the noise but i dont exactly see a reason
     // why i should hold on to one instead
@@ -53,7 +62,7 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(f32) * total_points, point_data, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storage_buffer);
 
-    glBindImageTexture(0, volume->noise_texture.id, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+    glBindImageTexture(1, volume->noise_texture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32F);
 
     shader_load_int(renderer->u_cells_per_axis, volume->cells_per_axis);
 
@@ -65,28 +74,47 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void render_cloud_volume(cloud_volume_s* volume, fbo_s* buffer) {
+void render_cloud_volume(cloud_volume_s* volume, fbo_s* target_buffer) {
     cloud_shader_s* shader = &game_state->cloud_shader;
-    mesh_s* cube = &game_state->cloud_renderer.mesh;
+    fbo_s* back_buffer = &game_state->cloud_renderer.back_buffer;
+    mesh_s* quad = &game_state->screen_quad;
 
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
 
-    // glBindFramebuffer(GL_FRAMEBUFFER, buffer->id);
-    // glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glBindFramebuffer(GL_FRAMEBUFFER, back_buffer->id);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-    glBindVertexArray(cube->vao);
-    mesh_enable_attributes(cube);
-    
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, target_buffer->id);
+
+    // color
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, target_buffer->textures[0].id);
+
+    // depth
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, target_buffer->depth.id);
+
+    // noise 
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_3D, volume->noise_texture.id);
+
+    glBindVertexArray(quad->vao);
+    mesh_enable_attributes(quad);
+
     shader_start(&shader->program);
 
     shader->program.load_uniforms(volume);
 
-    glDrawElements(GL_TRIANGLES, cube->index_count, GL_UNSIGNED_INT, NULL);
+    glDrawElements(GL_TRIANGLES, quad->index_count, GL_UNSIGNED_INT, NULL);
 
     shader_stop();
 
-    mesh_disable_attributes(cube);
+    mesh_disable_attributes(quad);
     glBindVertexArray(0);
 
-    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // TODO(nix3l): figure out what to do about the depth buffer here
+    fbo_copy_texture(back_buffer, target_buffer, GL_COLOR_ATTACHMENT0);
 }

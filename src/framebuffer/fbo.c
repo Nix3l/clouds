@@ -36,7 +36,7 @@ void fbo_create_texture(fbo_s* fbo, GLenum attachment_type, GLint internal_forma
         if(fbo->textures[i].id == 0) {
             texture = &fbo->textures[i];
 
-            // TODO(nix3l): not the biggest fan of putting this here
+            // not the biggest fan of putting this here
             // because it doesnt make sense but hey it works
             fbo->attachments[i] = attachment_type;
             break;
@@ -84,10 +84,6 @@ void fbo_create_depth_texture(fbo_s* fbo) {
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, fbo->width, fbo->height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
-    // NOTE(nix3l): for now hard code these to GL_NEAREST
-    // in the future (if i reuse this code) i would want to
-    // have a way to set the texture parameters through a function
-    // to give even more control over them
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,   GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,   GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);

@@ -8,7 +8,7 @@
 #include "shader/shader.h"
 
 typedef struct {
-    mesh_s mesh;
+    fbo_s back_buffer;
 
     compute_shader_s noise_compute;
     uniform_t u_cells_per_axis;

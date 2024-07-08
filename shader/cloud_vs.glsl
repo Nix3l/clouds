@@ -1,10 +1,12 @@
 #version 330 core
 
 layout (location = 0) in vec3 vs_position;
+layout (location = 1) in vec2 vs_uvs;
 
-uniform mat4 projview_mat;
-uniform mat4 transformation_mat;
+out vec2 fs_uvs;
 
 void main(void) {
-    gl_Position = projview_mat * transformation_mat * vec4(vs_position, 1.0);
+    gl_Position = vec4(vs_position, 1.0);
+
+    fs_uvs;
 }

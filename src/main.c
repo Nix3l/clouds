@@ -1,7 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 // TODO(nix3l): change the renderer to be a post processing effect
-// TODO(nix3l): render the noise into a 3D texture
 
 #include "game.h"
 #include "util/log.h"
@@ -157,6 +156,16 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
         .intensity = 0.9f
     };
 
+    game_state->screen_buffer = create_fbo(
+            game_state->window.width,
+            game_state->window.height,
+            1,
+            &game_state->fbo_arena);
+
+    fbo_create_texture(&game_state->screen_buffer, GL_COLOR_ATTACHMENT0, GL_RGB16F, GL_RGB);
+    fbo_create_depth_texture(&game_state->screen_buffer);
+
+    init_pproc_renderer();
     init_cloud_renderer();
 
     // VOLUMES
@@ -196,8 +205,11 @@ int main(void) {
         update_camera(&game_state->camera);
 
         // RENDER
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        render_cloud_volume(&game_state->volume, NULL);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        render_cloud_volume(&game_state->volume, &game_state->screen_buffer);
+
+        fbo_copy_texture_to_screen(&game_state->screen_buffer, GL_COLOR_ATTACHMENT0);
 
         update_imgui();
         show_debug_stats_window();

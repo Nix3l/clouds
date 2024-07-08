@@ -55,7 +55,7 @@ run:
 	${BUILD_DIR}/${EXEC_NAME}
 
 num_lines:
-	cat $(shell find shader -iname *.glsl) ${C_SOURCES} ${C_HEADERS} | wc -l
+	cat $(shell find shader -iname *.glsl) $(shell find shader -iname *.comp) ${C_SOURCES} ${C_HEADERS} | wc -l
 
 clean:
 	rm ./${BUILD_DIR}/*

@@ -5,14 +5,23 @@
 
 static void bind_attributes() {
     shader_bind_attribute(&game_state->cloud_shader.program, 0, "vs_position");
+    shader_bind_attribute(&game_state->cloud_shader.program, 1, "vs_uvs");
 }
 
 static void load_uniforms(void* _data) {
     cloud_shader_s* shader = &game_state->cloud_shader;
     cloud_volume_s* volume = _data;
 
-    shader_load_mat4(shader->u_projview, camera_projection_view(&game_state->camera));
-    shader_load_mat4(shader->u_transformation, get_transformation_matrix(volume->position, VECTOR_3_ZERO(), volume->scale));
+    shader_load_int(shader->u_scene_tex, 0);
+    shader_load_int(shader->u_depth_tex, 1);
+
+    shader_load_int(shader->u_noise_tex, 2);
+
+    shader_load_float(shader->u_near_plane, game_state->camera.near_plane);
+    shader_load_float(shader->u_far_plane, game_state->camera.far_plane);
+
+    shader_load_mat4(shader->u_projection, camera_projection(&game_state->camera));
+    shader_load_mat4(shader->u_view, camera_view(&game_state->camera));
 }
 
 void init_cloud_shader() {
@@ -28,7 +37,15 @@ void init_cloud_shader() {
     game_state->cloud_shader = (cloud_shader_s) {
         .program = shader,
 
-        .u_projview = shader_get_uniform(&shader, "projview_mat"),
-        .u_transformation = shader_get_uniform(&shader, "transformation_mat"),
+        .u_scene_tex  = shader_get_uniform(&shader, "scene_tex"),
+        .u_depth_tex  = shader_get_uniform(&shader, "depth_tex"),
+
+        .u_noise_tex  = shader_get_uniform(&shader, "noise_tex"),
+
+        .u_near_plane = shader_get_uniform(&shader, "near_plane"),
+        .u_far_plane  = shader_get_uniform(&shader, "far_plane"),
+
+        .u_projection = shader_get_uniform(&shader, "projection"),
+        .u_view       = shader_get_uniform(&shader, "view"),
     };
 }

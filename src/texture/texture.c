@@ -159,7 +159,7 @@ texture_s create_cubemap(char** filenames, arena_s* arena) {
         glTexImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
             0,
-            GL_RGB,
+            GL_RGB16F,
             width,
             height,
             0,

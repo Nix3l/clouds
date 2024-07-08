@@ -18,7 +18,7 @@ typedef struct {
     u32 width;
     u32 height;
 
-    usize num_textures;
+    usize num_textures; // does NOT count the depth texture
     fbo_texture_s* textures;
 
     fbo_texture_s depth;
