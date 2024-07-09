@@ -11,7 +11,7 @@ void init_cloud_renderer() {
                 &game_state->fbo_arena),
         .noise_compute = load_and_create_compute_shader(
                 "shader/noise/worley.comp",
-                (v3i) { .x = 128, .y = 128, .z = 128 },
+                (v3i) { .x = 32, .y = 32, .z = 32 },
                 &game_state->frame_arena),
     };
 
@@ -51,8 +51,6 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
 
     compute_shader_start(shader);
 
-    shader_load_int(compute_shader_get_uniform(shader, "volume"), 1);
-
     // NOTE(nix3l): not sure if its smart to generate a storage buffer
     // every time we generate the noise but i dont exactly see a reason
     // why i should hold on to one instead
@@ -62,6 +60,7 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(f32) * total_points, point_data, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storage_buffer);
 
+    shader_load_int(compute_shader_get_uniform(shader, "volume"), 1);
     glBindImageTexture(1, volume->noise_texture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32F);
 
     shader_load_int(renderer->u_cells_per_axis, volume->cells_per_axis);
@@ -70,8 +69,8 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     compute_shader_stop();
 
     // delete the buffer as we dont need it anymore
-    glDeleteBuffers(1, &storage_buffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glDeleteBuffers(1, &storage_buffer);
 }
 
 void render_cloud_volume(cloud_volume_s* volume, fbo_s* target_buffer) {

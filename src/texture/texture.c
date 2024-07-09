@@ -100,8 +100,11 @@ texture_3d_s create_texture_3d(i32 width, i32 height, i32 depth, void* data) {
             depth,
             0,
             texture.data_format,
-            GL_FLOAT,
+            GL_UNSIGNED_BYTE,
             data);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glBindTexture(GL_TEXTURE_3D, 0);
     return texture;
@@ -131,8 +134,11 @@ texture_3d_s create_texture_3d_format(i32 width, i32 height, i32 depth, GLenum i
             depth,
             0,
             texture.data_format,
-            GL_FLOAT,
+            GL_UNSIGNED_BYTE,
             data);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glBindTexture(GL_TEXTURE_3D, 0);
     return texture;
