@@ -11,7 +11,7 @@ void init_cloud_renderer() {
                 &game_state->fbo_arena),
         .noise_compute = load_and_create_compute_shader(
                 "shader/noise/worley.comp",
-                (v3i) { .x = 32, .y = 32, .z = 32 },
+                (v3i) { .x = 16, .y = 16, .z = 16 },
                 &game_state->frame_arena),
     };
 
@@ -20,15 +20,17 @@ void init_cloud_renderer() {
     cloud_renderer_s* renderer = &game_state->cloud_renderer;
     compute_shader_s* shader = &game_state->cloud_renderer.noise_compute;
 
+    renderer->u_resolution = compute_shader_get_uniform(shader, "resolution");
     renderer->u_cells_per_axis = compute_shader_get_uniform(shader, "cells_per_axis");
+
+    renderer->u_volume = compute_shader_get_uniform(shader, "volume");
 }
 
 void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
-    u32 width = volume->noise_texture.width, height = volume->noise_texture.height, depth = volume->noise_texture.depth;
-
-    u32 cell_width  = width  / volume->cells_per_axis;
-    u32 cell_height = height / volume->cells_per_axis;
-    u32 cell_depth  = depth  / volume->cells_per_axis;
+    // generate the point offsets
+    // points are represented as offsets from the bottom left corner of a cell
+    // and each cell is given a work group
+    f32 cell_size = 1.0f / volume->cells_per_axis;
 
     u32 total_points = volume->cells_per_axis * volume->cells_per_axis * volume->cells_per_axis;
     f32* point_data = arena_push(arena, 3 * sizeof(f32) * total_points);
@@ -39,9 +41,9 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     for(u32 z = 0; z < volume->cells_per_axis; z ++) {
         for(u32 y = 0; y < volume->cells_per_axis; y ++) {
             for(u32 x = 0; x < volume->cells_per_axis; x ++) {
-                *(curr_point++) = cell_width  * x + RAND_IN_RANGE(0.0f, cell_width);
-                *(curr_point++) = cell_height * y + RAND_IN_RANGE(0.0f, cell_height);
-                *(curr_point++) = cell_depth  * z + RAND_IN_RANGE(0.0f, cell_depth);
+                *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
+                *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
+                *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
             }
         }
     }
@@ -60,12 +62,13 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(f32) * total_points, point_data, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storage_buffer);
 
-    shader_load_int(compute_shader_get_uniform(shader, "volume"), 1);
+    shader_load_int(renderer->u_volume, 1);
     glBindImageTexture(1, volume->noise_texture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32F);
 
+    shader_load_float(renderer->u_resolution, (float) volume->resolution);
     shader_load_int(renderer->u_cells_per_axis, volume->cells_per_axis);
 
-    compute_shader_dispatch(shader);
+    compute_shader_dispatch_groups(volume->cells_per_axis, volume->cells_per_axis, volume->cells_per_axis);
     compute_shader_stop();
 
     // delete the buffer as we dont need it anymore

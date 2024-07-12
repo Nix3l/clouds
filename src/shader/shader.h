@@ -61,6 +61,7 @@ void compute_shader_start(compute_shader_s* shader);
 void compute_shader_stop();
 
 void compute_shader_dispatch(compute_shader_s* shader);
+void compute_shader_dispatch_groups(u32 x, u32 y, u32 z);
 
 void shader_bind_attribute(shader_s* shader, GLuint attribute, char* attribute_name);
 

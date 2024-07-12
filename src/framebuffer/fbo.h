@@ -32,6 +32,8 @@ void destroy_fbo(fbo_s* fbo);
 void fbo_create_texture(fbo_s* fbo, GLenum attachment_type, GLint internal_format, GLenum format);
 void fbo_create_depth_texture(fbo_s* fbo);
 
+void fbo_clear(fbo_s* fbo, v3f col, GLbitfield clear_bit);
+
 void fbo_copy_texture_to_screen(fbo_s* fbo, GLenum src_att);
 void fbo_copy_texture(fbo_s* src_fbo, fbo_s* dest_fbo, GLenum src_att);
 void fbo_copy_depth_texture(fbo_s* src, fbo_s* dest);

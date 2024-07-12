@@ -11,7 +11,11 @@ typedef struct {
     fbo_s back_buffer;
 
     compute_shader_s noise_compute;
+
+    uniform_t u_resolution;
     uniform_t u_cells_per_axis;
+
+    uniform_t u_volume;
 } cloud_renderer_s;
 
 void init_cloud_renderer();

@@ -95,6 +95,13 @@ void fbo_create_depth_texture(fbo_s* fbo) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void fbo_clear(fbo_s* fbo, v3f col, GLbitfield clear_bit) {
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo->id);
+    glClearColor(col.r, col.g, col.b, 1.0);
+    glClear(clear_bit);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void fbo_copy_texture_to_screen(fbo_s* fbo, GLenum src_att) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo->id);

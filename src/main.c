@@ -60,13 +60,26 @@ static void show_settings_window() {
     if(!game_state->show_settings_window) return;
 
     igBegin("settings", &game_state->show_settings_window, ImGuiWindowFlags_None);
+
     // SETTINGS
 
     if(igCollapsingHeader_TreeNodeFlags("camera", ImGuiTreeNodeFlags_None)) {
+        igPushID_Str("camera_settings");
         igDragFloat("sensetivity", &game_state->camera.sens, 10.0f, 0.0f, MAX_f32, "%.0f", ImGuiSliderFlags_None);
         igDragFloat("move speed", &game_state->camera.speed, 1.0f, 0.0f, MAX_f32, "%.0f", ImGuiSliderFlags_None);
+
+        igDragFloat3("position", game_state->camera.position.raw, 1.0f, -MAX_f32, MAX_f32, "%.1f", ImGuiSliderFlags_ReadOnly);
+        igDragFloat3("rotation", game_state->camera.rotation.raw, 1.0f, -MAX_f32, MAX_f32, "%.1f", ImGuiSliderFlags_ReadOnly);
+        igPopID();
     }
 
+    if(igCollapsingHeader_TreeNodeFlags("volume", ImGuiTreeNodeFlags_None)) {
+        igPushID_Str("volume_settings");
+        igDragFloat3("position", game_state->volume.position.raw, 1.0f, -MAX_f32, MAX_f32, "%.1f", ImGuiSliderFlags_None);
+        igDragFloat3("size", game_state->volume.size.raw, 1.0f, 0.0f, MAX_f32, "%.1f", ImGuiSliderFlags_None);
+        igPopID();
+    }
+  
     igEnd();
 }
 
@@ -169,9 +182,9 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     init_cloud_renderer();
 
     // VOLUMES
-    game_state->volume = create_cloud_volume(128, 128, 128, 32);
+    game_state->volume = create_cloud_volume(128, 16);
     game_state->volume.position = VECTOR_3(0.0f, -80.0f, -350.0f);
-    game_state->volume.scale = VECTOR_3(128.0f, 64.0f, 128.0f);
+    game_state->volume.size = VECTOR_3(128.0f, 64.0f, 128.0f);
 
     render_cloud_noise(&game_state->volume, &game_state->frame_arena);
 
@@ -182,7 +195,7 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     glfwSetInputMode(game_state->window.glfw_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     // LOAD PARAMETERS
-    
+
     // OTHER
 }
 
@@ -205,8 +218,7 @@ int main(void) {
         update_camera(&game_state->camera);
 
         // RENDER
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        fbo_clear(&game_state->screen_buffer, VECTOR_3(0.098f, 0.11f, 0.11f), GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         render_cloud_volume(&game_state->volume, &game_state->screen_buffer);
 
         fbo_copy_texture_to_screen(&game_state->screen_buffer, GL_COLOR_ATTACHMENT0);

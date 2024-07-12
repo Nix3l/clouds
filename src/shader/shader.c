@@ -162,6 +162,12 @@ void compute_shader_dispatch(compute_shader_s* shader) {
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
+void compute_shader_dispatch_groups(u32 x, u32 y, u32 z) {
+    glDispatchCompute(x, y, z);
+    // TODO(nix3l): look into this later
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+}
+
 void shader_bind_attribute(shader_s* shader, GLuint attribute, char* attribute_name) {
     glBindAttribLocation(shader->program_id, attribute, attribute_name);
 }
