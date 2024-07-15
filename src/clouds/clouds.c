@@ -1,6 +1,6 @@
 #include "clouds.h"
 
-cloud_volume_s create_cloud_volume(u32 resolution, u32 cells_per_axis) {
+cloud_volume_s create_cloud_volume(u32 resolution, v3i cells_per_axis) {
     return (cloud_volume_s) {
         .position = VECTOR_3_ZERO(),
         .size = VECTOR_3_ONE(),

@@ -3,15 +3,21 @@
 // might be faster to make this more than one but honestly i do not care at the moment
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
+uniform int resolution;
+uniform ivec3 cells_per_axis;
+
 // generated on the cpu and loaded here
 layout(std430, binding = 0) readonly buffer point_ssbo {
-    vec3 point_offset_data[];
+    // NOTE(nix3l): always avoid using vec3s and mat3s in SSBOs
+    // because they have to be aligned to a 16-byte boundary
+    // which is the same size as a vec4. same applies to mat3s
+    // so just to make it easier, always use vec4s and mat4s instead
+    // note that we are wasting quite a bit of space here
+    // but it wont really matter
+    vec4 point_offset_data[];
 };
 
 layout(rgba32f, binding = 1) uniform writeonly image3D volume;
-
-uniform float resolution;
-uniform int cells_per_axis;
 
 const ivec3[27] offsets = {
     ivec3(-1,  1, -1), ivec3(0,  1, -1), ivec3(1,  1, -1),
@@ -32,24 +38,16 @@ float dist2(vec3 pos, vec3 point) {
     return dot(pp, pp);
 }
 
-uint flatten_index(ivec3 point_pos) {
-    return point_pos.x + cells_per_axis * (point_pos.y + cells_per_axis * point_pos.z);
+uint flatten_index(ivec3 point_pos, int cpa) {
+    return point_pos.x + cpa * (point_pos.y + cpa * point_pos.z);
 }
 
-vec3 point_at_index(vec3 group_id, ivec3 index) {
-    // this is the most hacky thing i have ever made holy
-    // so for whatever reason the SSBO just straight up stops working
-    // after exactly going 3/4ths of the way through the array of points????
-    // huh????
-    // so yeah i guess just ignore those for now and wrap around
-    // i guess it works for now. could be an nvidia linux driver issue or whatever
-    // but i dont care enough to look into it right now
-    int p34 = cells_per_axis * cells_per_axis * cells_per_axis * 3 / 4;
-    return group_id / float(cells_per_axis) + point_offset_data[(flatten_index(index) + p34) % p34];
+vec3 point_at_index(vec3 group_id, ivec3 index, int cpa, int offset) {
+    return group_id / float(cpa) + point_offset_data[flatten_index(index, cpa) + offset].xyz;
 }
 
-float enumerate_points(vec3 position) {
-    vec3 cell = floor(position * cells_per_axis);
+float enumerate_points(vec3 position, int cpa, int index_offset) {
+    vec3 cell = floor(position * cpa);
     float min_dst = 1.0f;
 
     // loop through all adjacent cells and get the smallest distance
@@ -60,22 +58,26 @@ float enumerate_points(vec3 position) {
         // wrap offset
         ivec3 cell_index = ivec3(cell);
         for(int c = 0; c < 3; c ++) {
-            if(cell_index[c] == 0 && offset[c] == -1) offset[c] = cells_per_axis - 1;
-            if(cell_index[c] == cells_per_axis - 1 && offset[c] == 1) offset[c] = 1 - cells_per_axis;
+            if(cell_index[c] == 0 && offset[c] == -1) offset[c] = cpa - 1;
+            if(cell_index[c] == cpa - 1 && offset[c] == 1) offset[c] = 1 - cpa;
         }
 
-        float dst = dist2(position, point_at_index(cell + offset, ivec3(cell) + offset));
+        float dst = dist2(position, point_at_index(cell + offset, ivec3(cell) + offset, cpa, index_offset));
         min_dst = min(min_dst, dst);
     }
 
-    return 1.0f - clamp(cells_per_axis * sqrt(min_dst), 0.0f, 1.0f);
+    return 1.0f - clamp(cpa * sqrt(min_dst), 0.0f, 1.0f);
 }
 
 void main(void) {
-    ivec3 position = ivec3(gl_GlobalInvocationID);
-    float dst = enumerate_points(vec3(gl_GlobalInvocationID) / resolution);
+    vec3 normalised_position = vec3(gl_GlobalInvocationID) / float(resolution);
+    
+    int ld_points = int(pow(cells_per_axis.x, 3));
+    int md_points = int(pow(cells_per_axis.y, 3));
 
-    // imageStore(volume, position, vec4(point_offset_data[flatten_index(ivec3(floor(vec3(gl_GlobalInvocationID) / resolution * cells_per_axis)))], 1.0));
-    // imageStore(volume, position, vec4(flatten_index(ivec3(floor(vec3(gl_GlobalInvocationID) / resolution * cells_per_axis)))));
-    imageStore(volume, position, vec4(dst));
+    float ld_dst = enumerate_points(normalised_position, cells_per_axis.x, 0);
+    float md_dst = enumerate_points(normalised_position, cells_per_axis.y, ld_points);
+    float hd_dst = enumerate_points(normalised_position, cells_per_axis.z, ld_points + md_points);
+
+    imageStore(volume, ivec3(gl_GlobalInvocationID), vec4(ld_dst, md_dst, hd_dst, 1.0));
 }

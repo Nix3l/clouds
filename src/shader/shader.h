@@ -73,6 +73,8 @@ void shader_load_float(uniform_t uniform, f32 value);
 void shader_load_bool(uniform_t uniform, bool value);
 void shader_load_vec2(uniform_t uniform, vec2s value);
 void shader_load_vec3(uniform_t uniform, vec3s value);
+void shader_load_ivec2(uniform_t uniform, ivec2s value);
+void shader_load_ivec3(uniform_t uniform, ivec3s value);
 void shader_load_mat4(uniform_t uniform, mat4s value);
 
 // TODO(nix3l): make wrapper functions for glUniform*v()

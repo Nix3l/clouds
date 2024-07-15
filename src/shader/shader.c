@@ -214,6 +214,14 @@ void shader_load_vec3(uniform_t uniform, vec3s value) {
     glUniform3f(uniform, value.x, value.y, value.z);
 }
 
+void shader_load_ivec2(uniform_t uniform, ivec2s value) {
+    glUniform2i(uniform, value.x, value.y);
+}
+
+void shader_load_ivec3(uniform_t uniform, ivec3s value) {
+    glUniform3i(uniform, value.x, value.y, value.z);
+}
+
 void shader_load_mat4(uniform_t uniform, mat4s value) {
     glUniformMatrix4fv(uniform, 1, GL_FALSE, (float*) value.raw);
 }

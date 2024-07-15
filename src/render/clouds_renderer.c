@@ -26,27 +26,38 @@ void init_cloud_renderer() {
     renderer->u_volume = compute_shader_get_uniform(shader, "volume");
 }
 
-void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
+void generate_points_for_lod(f32* data, u32 cells_per_axis) {
     // generate the point offsets
     // points are represented as offsets from the bottom left corner of a cell
     // and each cell is given a work group
-    f32 cell_size = 1.0f / volume->cells_per_axis;
+    f32 cell_size = 1.0f / cells_per_axis;
 
-    u32 total_points = volume->cells_per_axis * volume->cells_per_axis * volume->cells_per_axis;
-    f32* point_data = arena_push(arena, 3 * sizeof(f32) * total_points);
-    f32* curr_point = point_data;
-
+    f32* curr_point = data;
     // TODO(nix3l): seed
-
-    for(u32 z = 0; z < volume->cells_per_axis; z ++) {
-        for(u32 y = 0; y < volume->cells_per_axis; y ++) {
-            for(u32 x = 0; x < volume->cells_per_axis; x ++) {
+    for(u32 z = 0; z < cells_per_axis; z ++) {
+        for(u32 y = 0; y < cells_per_axis; y ++) {
+            for(u32 x = 0; x < cells_per_axis; x ++) {
                 *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
                 *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
                 *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
+                *(curr_point++) = 0.0f; // padding for the SSBO to align to 16 bytes
             }
         }
     }
+}
+
+void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
+    u32 ld_points = volume->cells_per_axis.x * volume->cells_per_axis.x * volume->cells_per_axis.x;
+    u32 md_points = volume->cells_per_axis.y * volume->cells_per_axis.y * volume->cells_per_axis.y;
+    u32 hd_points = volume->cells_per_axis.z * volume->cells_per_axis.z * volume->cells_per_axis.z;
+    u32 total_points = ld_points + md_points + hd_points;
+
+    f32* point_data = arena_push(arena, 4 * sizeof(GLfloat) * total_points);
+    
+    // generate sets of point data for each level of detail
+    generate_points_for_lod(point_data,                         volume->cells_per_axis.x);
+    generate_points_for_lod(point_data + ld_points,             volume->cells_per_axis.y);
+    generate_points_for_lod(point_data + ld_points + md_points, volume->cells_per_axis.z);
 
     cloud_renderer_s* renderer = &game_state->cloud_renderer; 
     compute_shader_s* shader = &renderer->noise_compute;
@@ -59,14 +70,14 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     GLuint storage_buffer;
     glGenBuffers(1, &storage_buffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, storage_buffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(f32) * total_points, point_data, GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 4 * sizeof(GLfloat) * total_points, point_data, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storage_buffer);
 
     shader_load_int(renderer->u_volume, 1);
     glBindImageTexture(1, volume->noise_texture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-    shader_load_float(renderer->u_resolution, (float) volume->resolution);
-    shader_load_int(renderer->u_cells_per_axis, volume->cells_per_axis);
+    shader_load_int(renderer->u_resolution, volume->resolution);
+    shader_load_ivec3(renderer->u_cells_per_axis, volume->cells_per_axis);
 
     compute_shader_dispatch_groups(volume->resolution, volume->resolution, volume->resolution);
     compute_shader_stop();
