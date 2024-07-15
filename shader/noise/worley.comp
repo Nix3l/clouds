@@ -4,11 +4,11 @@
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 // generated on the cpu and loaded here
-layout(std430, binding = 0) buffer point_ssbo {
+layout(std430, binding = 0) readonly buffer point_ssbo {
     vec3 point_offset_data[];
 };
 
-layout(r32f, binding = 1) uniform writeonly image3D volume;
+layout(rgba32f, binding = 1) uniform writeonly image3D volume;
 
 uniform float resolution;
 uniform int cells_per_axis;
@@ -37,14 +37,20 @@ uint flatten_index(ivec3 point_pos) {
 }
 
 vec3 point_at_index(vec3 group_id, ivec3 index) {
-    return group_id / float(cells_per_axis) + point_offset_data[flatten_index(index)];
+    // this is the most hacky thing i have ever made holy
+    // so for whatever reason the SSBO just straight up stops working
+    // after exactly going 3/4ths of the way through the array of points????
+    // huh????
+    // so yeah i guess just ignore those for now and wrap around
+    // i guess it works for now. could be an nvidia linux driver issue or whatever
+    // but i dont care enough to look into it right now
+    int p34 = cells_per_axis * cells_per_axis * cells_per_axis * 3 / 4;
+    return group_id / float(cells_per_axis) + point_offset_data[(flatten_index(index) + p34) % p34];
 }
 
 float enumerate_points(vec3 position) {
     vec3 cell = floor(position * cells_per_axis);
     float min_dst = 1.0f;
-
-    // TODO(nix3l): wraparound for cells on the edges
 
     // loop through all adjacent cells and get the smallest distance
     // instead of looping through all points in the cube
@@ -62,12 +68,14 @@ float enumerate_points(vec3 position) {
         min_dst = min(min_dst, dst);
     }
 
-    return 1.0f - cells_per_axis * sqrt(min_dst);
+    return 1.0f - clamp(cells_per_axis * sqrt(min_dst), 0.0f, 1.0f);
 }
 
 void main(void) {
     ivec3 position = ivec3(gl_GlobalInvocationID);
     float dst = enumerate_points(vec3(gl_GlobalInvocationID) / resolution);
 
+    // imageStore(volume, position, vec4(point_offset_data[flatten_index(ivec3(floor(vec3(gl_GlobalInvocationID) / resolution * cells_per_axis)))], 1.0));
+    // imageStore(volume, position, vec4(flatten_index(ivec3(floor(vec3(gl_GlobalInvocationID) / resolution * cells_per_axis)))));
     imageStore(volume, position, vec4(dst));
 }

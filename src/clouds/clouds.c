@@ -8,6 +8,6 @@ cloud_volume_s create_cloud_volume(u32 resolution, u32 cells_per_axis) {
         .resolution = resolution,
         .cells_per_axis = cells_per_axis,
 
-        .noise_texture = create_texture_3d_format(resolution, resolution, resolution, GL_R32F, GL_RED, NULL)
+        .noise_texture = create_texture_3d_format(resolution, resolution, resolution, GL_RGBA32F, GL_RGBA, NULL)
     };
 }

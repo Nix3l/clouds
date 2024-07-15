@@ -63,7 +63,7 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storage_buffer);
 
     shader_load_int(renderer->u_volume, 1);
-    glBindImageTexture(1, volume->noise_texture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32F);
+    glBindImageTexture(1, volume->noise_texture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     shader_load_float(renderer->u_resolution, (float) volume->resolution);
     shader_load_int(renderer->u_cells_per_axis, volume->cells_per_axis);
