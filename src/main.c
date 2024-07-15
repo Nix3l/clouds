@@ -1,6 +1,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
-// TODO(nix3l): change the renderer to be a post processing effect
+// TODO(nix3l): fix the noise generation
+// TODO(nix3l): figure out volumetric rendering
 
 #include "game.h"
 #include "util/log.h"
@@ -182,7 +183,7 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     init_cloud_renderer();
 
     // VOLUMES
-    game_state->volume = create_cloud_volume(128, 16);
+    game_state->volume = create_cloud_volume(128, 8);
     game_state->volume.position = VECTOR_3(0.0f, -80.0f, -350.0f);
     game_state->volume.size = VECTOR_3(128.0f, 64.0f, 128.0f);
 

@@ -68,7 +68,7 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     shader_load_float(renderer->u_resolution, (float) volume->resolution);
     shader_load_int(renderer->u_cells_per_axis, volume->cells_per_axis);
 
-    compute_shader_dispatch_groups(volume->cells_per_axis, volume->cells_per_axis, volume->cells_per_axis);
+    compute_shader_dispatch_groups(volume->resolution, volume->resolution, volume->resolution);
     compute_shader_stop();
 
     // delete the buffer as we dont need it anymore

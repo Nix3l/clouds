@@ -74,11 +74,11 @@ void main(void) {
     vec2 ray_info = ray_box_distance(bounds_min, bounds_max, camera_pos, pixel_dir);
     /*
     if(ray_info.y == 0) {
-        out_color = vec4(1.0, 1.0, 1.0, 0.0);
+        out_color = vec4(1.0);
         return;
     }
     */
 
-    float noise = texture(noise_tex, vec3(fs_uvs, 0.0)).r;
+    float noise = texture(noise_tex, vec3(fs_uvs, 1.0)).r;
     out_color = vec4(vec3(noise), 1.0);
 }
