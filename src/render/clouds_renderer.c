@@ -33,7 +33,10 @@ static void generate_volume_perlin_noise(f32* data, cloud_volume_s* volume) {
     for(u32 z = 0; z < volume->resolution; z ++) {
         for(u32 y = 0; y < volume->resolution; y ++) {
             for(u32 x = 0; x < volume->resolution; x ++) {
-                *(curr++) = perlin_noise_3d((f32)x, (f32)y, (f32)z);
+                v3f input = V3F((f32)x, (f32)y, (f32)z);
+                input = glms_vec3_scale(input, volume->perlin_frequency / volume->resolution);
+
+                *(curr++) = perlin_noise_3d(input.x, input.y, input.z);
             }
         }
     }

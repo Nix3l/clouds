@@ -10,7 +10,7 @@ void update_camera(camera_s* camera) {
     if(!game_state->window.cursor_hidden) return;
 
     // move the camera
-    v3f movement = VECTOR_3(
+    v3f movement = V3F(
             is_key_down(GLFW_KEY_D) - is_key_down(GLFW_KEY_A),
             is_key_down(GLFW_KEY_SPACE) - is_key_down(GLFW_KEY_LEFT_SHIFT),
             // flipped since we look out on the -z axis

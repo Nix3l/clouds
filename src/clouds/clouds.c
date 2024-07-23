@@ -2,8 +2,8 @@
 
 cloud_volume_s create_cloud_volume(u32 resolution, v3i worley_cpa) {
     return (cloud_volume_s) {
-        .position = VECTOR_3_ZERO(),
-        .size = VECTOR_3_ONE(),
+        .position = V3F_ZERO(),
+        .size = V3F_ONE(),
 
         .resolution = resolution,
         .worley_cpa = worley_cpa,

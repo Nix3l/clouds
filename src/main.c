@@ -153,8 +153,8 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
 
     // RENDERER
     game_state->camera = (camera_s) {
-        .position   = VECTOR_3(0.0f, 0.0f, 0.0f),
-        .rotation   = VECTOR_3(0.0f, 0.0f, 0.0f),
+        .position   = V3F(0.0f, 0.0f, 0.0f),
+        .rotation   = V3F(0.0f, 0.0f, 0.0f),
         
         .fov        = 70.0f,
         .near_plane = 0.001f,
@@ -165,8 +165,8 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     };
 
     game_state->sun = (directional_light_s) {
-        .color = VECTOR_RGB(239.0f, 227.0f, 200.0f),
-        .direction = VECTOR_3(-0.1f, -0.3f, 0.04f),
+        .color = V3F_RGB(239.0f, 227.0f, 200.0f),
+        .direction = V3F(-0.1f, -0.3f, 0.04f),
         .intensity = 0.9f
     };
 
@@ -184,8 +184,10 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
 
     // VOLUMES
     game_state->volume = create_cloud_volume(128, (v3i) { .x = 8, .y = 16, .z = 32 });
-    game_state->volume.position = VECTOR_3(0.0f, -80.0f, -350.0f);
-    game_state->volume.size = VECTOR_3(128.0f, 64.0f, 128.0f);
+    game_state->volume.position = V3F(0.0f, -80.0f, -350.0f);
+    game_state->volume.size = V3F(128.0f, 64.0f, 128.0f);
+
+    game_state->volume.perlin_frequency = 32.0f;
 
     // GUI
     init_imgui();
@@ -219,7 +221,7 @@ int main(void) {
         update_camera(&game_state->camera);
 
         // RENDER
-        fbo_clear(&game_state->screen_buffer, VECTOR_3(0.098f, 0.11f, 0.11f), GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        fbo_clear(&game_state->screen_buffer, V3F(0.098f, 0.11f, 0.11f), GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         render_cloud_volume(&game_state->volume, &game_state->screen_buffer);
 
         fbo_copy_texture_to_screen(&game_state->screen_buffer, GL_COLOR_ATTACHMENT0);

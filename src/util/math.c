@@ -11,7 +11,7 @@ mat4s get_transformation_matrix(v3f position, v3f rotation, v3f scale) {
 }
 
 v3f yaw_pitch_to_direction(f32 yaw, f32 pitch) {
-    return VECTOR_3(
+    return V3F(
             -cosf(pitch) * sinf(yaw),
              sinf(pitch),
              cosf(yaw) * cosf(pitch)
@@ -19,7 +19,7 @@ v3f yaw_pitch_to_direction(f32 yaw, f32 pitch) {
 }
 
 v3f yaw_to_right(f32 yaw) {
-    return VECTOR_3(
+    return V3F(
             cosf(yaw),
             0,
             sinf(yaw)
