@@ -10,7 +10,7 @@ void init_cloud_renderer() {
                 1,
                 &game_state->fbo_arena),
         .noise_compute = load_and_create_compute_shader(
-                "shader/noise/worley.comp",
+                "shader/noise/noise.comp",
                 (v3i) { .x = 16, .y = 16, .z = 16 },
                 &game_state->frame_arena),
     };
@@ -21,22 +21,35 @@ void init_cloud_renderer() {
     compute_shader_s* shader = &game_state->cloud_renderer.noise_compute;
 
     renderer->u_resolution = compute_shader_get_uniform(shader, "resolution");
-    renderer->u_cells_per_axis = compute_shader_get_uniform(shader, "cells_per_axis");
+    renderer->u_worley_cpa = compute_shader_get_uniform(shader, "worley_cpa");
+    renderer->u_perlin_cpa = compute_shader_get_uniform(shader, "perlin_cpa");
 
     renderer->u_volume = compute_shader_get_uniform(shader, "volume");
 }
 
-void generate_points_for_lod(f32* data, u32 cells_per_axis) {
+static void generate_volume_perlin_noise(f32* data, cloud_volume_s* volume) {
+    f32* curr = data;
+
+    for(u32 z = 0; z < volume->resolution; z ++) {
+        for(u32 y = 0; y < volume->resolution; y ++) {
+            for(u32 x = 0; x < volume->resolution; x ++) {
+                *(curr++) = perlin_noise_3d((f32)x, (f32)y, (f32)z);
+            }
+        }
+    }
+}
+
+static void generate_volume_points_for_lod(f32* data, u32 cpa) {
     // generate the point offsets
     // points are represented as offsets from the bottom left corner of a cell
     // and each cell is given a work group
-    f32 cell_size = 1.0f / cells_per_axis;
+    f32 cell_size = 1.0f / cpa;
 
     f32* curr_point = data;
     // TODO(nix3l): seed
-    for(u32 z = 0; z < cells_per_axis; z ++) {
-        for(u32 y = 0; y < cells_per_axis; y ++) {
-            for(u32 x = 0; x < cells_per_axis; x ++) {
+    for(u32 z = 0; z < cpa; z ++) {
+        for(u32 y = 0; y < cpa; y ++) {
+            for(u32 x = 0; x < cpa; x ++) {
                 *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
                 *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
                 *(curr_point++) = RAND_IN_RANGE(0.0f, cell_size);
@@ -47,17 +60,23 @@ void generate_points_for_lod(f32* data, u32 cells_per_axis) {
 }
 
 void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
-    u32 ld_points = volume->cells_per_axis.x * volume->cells_per_axis.x * volume->cells_per_axis.x;
-    u32 md_points = volume->cells_per_axis.y * volume->cells_per_axis.y * volume->cells_per_axis.y;
-    u32 hd_points = volume->cells_per_axis.z * volume->cells_per_axis.z * volume->cells_per_axis.z;
+    u32 ld_points = volume->worley_cpa.x * volume->worley_cpa.x * volume->worley_cpa.x;
+    u32 md_points = volume->worley_cpa.y * volume->worley_cpa.y * volume->worley_cpa.y;
+    u32 hd_points = volume->worley_cpa.z * volume->worley_cpa.z * volume->worley_cpa.z;
     u32 total_points = ld_points + md_points + hd_points;
+    u32 total_voxels = volume->resolution * volume->resolution * volume->resolution;
 
-    f32* point_data = arena_push(arena, 4 * sizeof(GLfloat) * total_points);
+    f32* point_data = arena_push(arena, 4 * sizeof(f32) * total_points);
     
-    // generate sets of point data for each level of detail
-    generate_points_for_lod(point_data,                         volume->cells_per_axis.x);
-    generate_points_for_lod(point_data + ld_points,             volume->cells_per_axis.y);
-    generate_points_for_lod(point_data + ld_points + md_points, volume->cells_per_axis.z);
+    // generate sets of point data for each level of detail of worley noise
+    generate_volume_points_for_lod(point_data, volume->worley_cpa.x);
+    generate_volume_points_for_lod(point_data + ld_points, volume->worley_cpa.y);
+    generate_volume_points_for_lod(point_data + ld_points + md_points, volume->worley_cpa.z);
+
+    f32* perlin_data = arena_push(arena, sizeof(f32) * total_voxels);
+    
+    // generate perlin noise
+    generate_volume_perlin_noise(perlin_data, volume);
 
     cloud_renderer_s* renderer = &game_state->cloud_renderer; 
     compute_shader_s* shader = &renderer->noise_compute;
@@ -67,24 +86,31 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
     // NOTE(nix3l): not sure if its smart to generate a storage buffer
     // every time we generate the noise but i dont exactly see a reason
     // why i should hold on to one instead
-    GLuint storage_buffer;
-    glGenBuffers(1, &storage_buffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, storage_buffer);
+    GLuint worley_buffer;
+    glGenBuffers(1, &worley_buffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, worley_buffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, 4 * sizeof(GLfloat) * total_points, point_data, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storage_buffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, worley_buffer);
 
-    shader_load_int(renderer->u_volume, 1);
-    glBindImageTexture(1, volume->noise_texture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    GLuint perlin_buffer;
+    glGenBuffers(1, &perlin_buffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, perlin_buffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * total_voxels, perlin_data, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, perlin_buffer);
+
+    shader_load_int(renderer->u_volume, 2);
+    glBindImageTexture(2, volume->noise_texture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     shader_load_int(renderer->u_resolution, volume->resolution);
-    shader_load_ivec3(renderer->u_cells_per_axis, volume->cells_per_axis);
+    shader_load_ivec3(renderer->u_worley_cpa, volume->worley_cpa);
 
     compute_shader_dispatch_groups(volume->resolution, volume->resolution, volume->resolution);
     compute_shader_stop();
 
     // delete the buffer as we dont need it anymore
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glDeleteBuffers(1, &storage_buffer);
+    glDeleteBuffers(1, &worley_buffer);
+    glDeleteBuffers(1, &perlin_buffer);
 }
 
 void render_cloud_volume(cloud_volume_s* volume, fbo_s* target_buffer) {

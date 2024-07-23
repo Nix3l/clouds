@@ -41,7 +41,7 @@ static void show_debug_stats_window() {
             game_state->mesh_arena.size +
             game_state->fbo_arena.size +
             game_state->params_arena.size +
-            game_state->texture_arena.size,
+            game_state->texture_arena.size +
             game_memory->permenant_storage_size);
     igIndent(12.0f);
     igText("of which state: %u\n", sizeof(game_state_s));
@@ -187,8 +187,6 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     game_state->volume.position = VECTOR_3(0.0f, -80.0f, -350.0f);
     game_state->volume.size = VECTOR_3(128.0f, 64.0f, 128.0f);
 
-    render_cloud_noise(&game_state->volume, &game_state->frame_arena);
-
     // GUI
     init_imgui();
     game_state->time_scale = 1.0f;
@@ -198,6 +196,8 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     // LOAD PARAMETERS
 
     // OTHER
+
+    render_cloud_noise(&game_state->volume, &game_state->frame_arena);
 }
 
 static void terminate_game() {

@@ -19,8 +19,8 @@ void update_camera(camera_s* camera) {
 
     movement = glms_vec3_scale(movement, camera->speed * delta_time() / game_state->time_scale);
 
-    v3f forward = yaw_pitch_to_direction(camera->rotation.y, camera->rotation.x);
-    v3f right = yaw_to_right(camera->rotation.y);
+    v3f forward = yaw_pitch_to_direction(RADIANS(camera->rotation.y), RADIANS(camera->rotation.x));
+    v3f right = yaw_to_right(RADIANS(camera->rotation.y));
 
     camera->position = glms_vec3_add(glms_vec3_scale(right, movement.x), camera->position);
     camera->position = glms_vec3_add(glms_vec3_scale(forward, movement.z), camera->position);

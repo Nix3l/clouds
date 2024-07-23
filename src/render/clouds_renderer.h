@@ -13,7 +13,8 @@ typedef struct {
     compute_shader_s noise_compute;
 
     uniform_t u_resolution;
-    uniform_t u_cells_per_axis;
+    uniform_t u_worley_cpa;
+    uniform_t u_perlin_cpa;
 
     uniform_t u_volume;
 } cloud_renderer_s;

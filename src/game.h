@@ -17,6 +17,7 @@
 #include "light/light.h"
 #include "clouds/clouds.h"
 #include "shader/clouds_shader.h"
+#include "noise/perlin.h"
 
 typedef struct {
     usize permenant_storage_size;
