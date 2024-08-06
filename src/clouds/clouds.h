@@ -18,6 +18,7 @@ typedef struct {
     f32 perlin_amplitude;
     f32 perlin_lacunarity;
     f32 perlin_persistence;
+    u32 perlin_octaves;
 
     texture_3d_s noise_texture;
 } cloud_volume_s;

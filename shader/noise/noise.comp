@@ -23,6 +23,8 @@ layout(std430, binding = 1) readonly buffer perlin_ssbo {
 
 layout(rgba32f, binding = 2) uniform writeonly image3D volume;
 
+// WORLEY NOISE
+
 const ivec3[27] worley_offsets = {
     ivec3(-1,  1, -1), ivec3(0,  1, -1), ivec3(1,  1, -1),
     ivec3(-1,  0, -1), ivec3(0,  0, -1), ivec3(1,  0, -1), // LAYER UNDER
@@ -76,7 +78,7 @@ float enumerate_worley_points(vec3 position, int cpa, int index_offset) {
 void main(void) {
     vec3 normalised_position = vec3(gl_GlobalInvocationID) / float(resolution);
 
-    float perlin_noise = perlin_data[flatten_index(ivec3(gl_GlobalInvocationID), resolution)];
+    float perlin = perlin_data[flatten_index(ivec3(gl_GlobalInvocationID), resolution)];
     
     int ld_points = int(pow(worley_cpa.x, 3));
     int md_points = int(pow(worley_cpa.y, 3));
@@ -85,5 +87,5 @@ void main(void) {
     float md_dst = enumerate_worley_points(normalised_position, worley_cpa.y, ld_points);
     float hd_dst = enumerate_worley_points(normalised_position, worley_cpa.z, ld_points + md_points);
 
-    imageStore(volume, ivec3(gl_GlobalInvocationID), vec4(perlin_noise, ld_dst, md_dst, hd_dst));
+    imageStore(volume, ivec3(gl_GlobalInvocationID), vec4(perlin, ld_dst, md_dst, hd_dst));
 }
