@@ -187,8 +187,8 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     game_state->volume.position = V3F(0.0f, -80.0f, -350.0f);
     game_state->volume.size = V3F(128.0f, 64.0f, 128.0f);
 
-    game_state->volume.perlin_frequency   = 1.2f;
-    game_state->volume.perlin_lacunarity  = 2.0f;
+    game_state->volume.perlin_frequency   = 2.4f;
+    game_state->volume.perlin_lacunarity  = 1.74f;
     game_state->volume.perlin_amplitude   = 0.8f;
     game_state->volume.perlin_persistence = 0.6f;
     game_state->volume.perlin_octaves     = 5;
