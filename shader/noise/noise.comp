@@ -1,10 +1,14 @@
 #version 430 core
 
+// NOTE(nix3l): https://umu.diva-portal.org/smash/get/diva2:1223894/FULLTEXT01.pdf
+//              ^^ source for most of this
+
 // might be faster to make this more than one but honestly i do not care at the moment
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 uniform int   resolution;
 uniform ivec3 worley_cpa;
+uniform float persistence;
 
 // generated on the cpu and loaded here
 layout(std430, binding = 0) readonly buffer point_ssbo {
@@ -75,6 +79,14 @@ float enumerate_worley_points(vec3 position, int cpa, int index_offset) {
     return 1.0f - clamp(cpa * sqrt(min_dst), 0.0f, 1.0f);
 }
 
+// remaps a value from one range to another
+// v -> value to be remapped
+// [l0, h0] -> original range of the value
+// [ln, hn] -> new range to be remapped to
+float remap(float v, float l0, float h0, float ln, float hn) {
+    return ln + ((v - l0) * (hn - ln)) / (h0 - l0);
+}
+
 void main(void) {
     vec3 normalised_position = vec3(gl_GlobalInvocationID) / float(resolution);
 
@@ -87,5 +99,11 @@ void main(void) {
     float md_dst = enumerate_worley_points(normalised_position, worley_cpa.y, ld_points);
     float hd_dst = enumerate_worley_points(normalised_position, worley_cpa.z, ld_points + md_points);
 
-    imageStore(volume, ivec3(gl_GlobalInvocationID), vec4(perlin, ld_dst, md_dst, hd_dst));
+    float fbm = ld_dst * persistence +
+                md_dst * persistence * 0.4 + 
+                hd_dst * persistence * 0.2;
+
+    float shape_noise = remap(perlin, fbm - 1.0, 1.0, 0.0, 1.0);
+
+    imageStore(volume, ivec3(gl_GlobalInvocationID), vec4(shape_noise, ld_dst, md_dst, hd_dst));
 }

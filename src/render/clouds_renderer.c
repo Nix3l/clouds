@@ -20,9 +20,9 @@ void init_cloud_renderer() {
     cloud_renderer_s* renderer = &game_state->cloud_renderer;
     compute_shader_s* shader = &game_state->cloud_renderer.noise_compute;
 
-    renderer->u_resolution = compute_shader_get_uniform(shader, "resolution");
-    renderer->u_worley_cpa = compute_shader_get_uniform(shader, "worley_cpa");
-    renderer->u_perlin_cpa = compute_shader_get_uniform(shader, "perlin_cpa");
+    renderer->u_resolution  = compute_shader_get_uniform(shader, "resolution");
+    renderer->u_worley_cpa  = compute_shader_get_uniform(shader, "worley_cpa");
+    renderer->u_persistence = compute_shader_get_uniform(shader, "persistence");
 
     renderer->u_volume = compute_shader_get_uniform(shader, "volume");
 }
@@ -115,6 +115,7 @@ void render_cloud_noise(cloud_volume_s* volume, arena_s* arena) {
 
     shader_load_int(renderer->u_resolution, volume->resolution);
     shader_load_ivec3(renderer->u_worley_cpa, volume->worley_cpa);
+    shader_load_float(renderer->u_persistence, volume->noise_persistence);
 
     compute_shader_dispatch_groups(volume->resolution, volume->resolution, volume->resolution);
     compute_shader_stop();

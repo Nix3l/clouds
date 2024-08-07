@@ -14,7 +14,7 @@ typedef struct {
 
     uniform_t u_resolution;
     uniform_t u_worley_cpa;
-    uniform_t u_perlin_cpa;
+    uniform_t u_persistence;
 
     uniform_t u_volume;
 } cloud_renderer_s;

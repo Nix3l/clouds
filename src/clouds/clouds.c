@@ -8,7 +8,13 @@ cloud_volume_s create_cloud_volume(u32 resolution, v3i worley_cpa) {
         .resolution = resolution,
         .worley_cpa = worley_cpa,
 
-        // TODO(nix3l): perlin parameters
+        .perlin_frequency   = 4.0f,
+        .perlin_lacunarity  = 0.0f,
+        .perlin_amplitude   = 1.0f,
+        .perlin_persistence = 0.0f,
+        .perlin_octaves     = 1.0f,
+
+        .noise_persistence  = 0.625f,
 
         .noise_texture = create_texture_3d_format(resolution, resolution, resolution, GL_RGBA32F, GL_RGBA, NULL)
     };

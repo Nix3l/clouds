@@ -1,5 +1,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 
+// NOTE(nix3l): https://umu.diva-portal.org/smash/get/diva2:1223894/FULLTEXT01.pdf
+//              ^^ source for most of this
+
 // TODO(nix3l): add wrapping to perlin noise
 // TODO(nix3l): figure out volumetric rendering
 
@@ -187,11 +190,11 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     game_state->volume.position = V3F(0.0f, -80.0f, -350.0f);
     game_state->volume.size = V3F(128.0f, 64.0f, 128.0f);
 
-    game_state->volume.perlin_frequency   = 16.0f;
-    game_state->volume.perlin_lacunarity  = 1.74f;
-    game_state->volume.perlin_amplitude   = 1.0f;
-    game_state->volume.perlin_persistence = 0.6f;
-    game_state->volume.perlin_octaves     = 1;
+    game_state->volume.perlin_frequency   = 2.0f;
+    game_state->volume.perlin_lacunarity  = 2.4f;
+    game_state->volume.perlin_amplitude   = 0.6f;
+    game_state->volume.perlin_persistence = 0.4f;
+    game_state->volume.perlin_octaves     = 5;
 
     // GUI
     init_imgui();
