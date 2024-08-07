@@ -72,13 +72,12 @@ void main(void) {
     vec3 bounds_max = position + size / 2;
 
     vec2 ray_info = ray_box_distance(bounds_min, bounds_max, camera_pos, pixel_dir);
-    /*
     if(ray_info.y == 0) {
-        out_color = vec4(1.0);
+        out_color = texture(scene_tex, fs_uvs);
         return;
     }
-    */
 
-    float noise = texture(noise_tex, vec3(fs_uvs, 1.0)).r;
-    out_color = vec4(vec3(noise), 1.0);
+    // TODO(nix3l): raymarch
+
+    out_color = vec4(1.0);
 }

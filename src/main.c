@@ -79,8 +79,29 @@ static void show_settings_window() {
 
     if(igCollapsingHeader_TreeNodeFlags("volume", ImGuiTreeNodeFlags_None)) {
         igPushID_Str("volume_settings");
-        igDragFloat3("position", game_state->volume.position.raw, 1.0f, -MAX_f32, MAX_f32, "%.1f", ImGuiSliderFlags_None);
-        igDragFloat3("size", game_state->volume.size.raw, 1.0f, 0.0f, MAX_f32, "%.1f", ImGuiSliderFlags_None);
+        cloud_volume_s* volume = &game_state->volume;
+
+        igDragFloat3("position", volume->position.raw, 1.0f, -MAX_f32, MAX_f32, "%.1f", ImGuiSliderFlags_None);
+        igDragFloat3("size", volume->size.raw, 1.0f, 0.0f, MAX_f32, "%.1f", ImGuiSliderFlags_None);
+
+        igSeparator();
+
+        if(igButton("render noise", (ImVec2) { .x = -0.1f, .y = 24.0f }))
+            render_cloud_noise(volume, &game_state->frame_arena);
+
+        igDragInt3("worly cpa", volume->worley_cpa.raw, 0.4f, 1, volume->resolution, "%d", ImGuiSliderFlags_None);
+
+        igDragFloat("perlin frequency", &volume->perlin_frequency, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat("perlin amplitude", &volume->perlin_amplitude, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat("perlin lacunarity", &volume->perlin_lacunarity, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat("perlin persistence", &volume->perlin_persistence, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+
+        // why must you do this to me imgui
+        u32 min = 1, max = MAX_u32;
+        igDragScalar("perlin octaves", ImGuiDataType_U32, &volume->perlin_octaves, 0.1f, &min, &max, "%u", ImGuiSliderFlags_None);
+
+        igDragFloat("noise persistence", &volume->noise_persistence, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+
         igPopID();
     }
   
