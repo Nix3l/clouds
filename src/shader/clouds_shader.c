@@ -28,6 +28,10 @@ static void load_uniforms(void* _data) {
 
     shader_load_vec3(shader->u_camera_pos, game_state->camera.position);
     shader_load_vec3(shader->u_camera_dir, game_state->camera.rotation);
+
+    shader_load_int(shader->u_cloud_march_steps, shader->cloud_march_steps);
+
+    shader_load_float(shader->u_absorption, shader->absorption);
 }
 
 void init_cloud_shader() {
@@ -43,21 +47,24 @@ void init_cloud_shader() {
     game_state->cloud_shader = (cloud_shader_s) {
         .program = shader,
 
-        .u_scene_tex       = shader_get_uniform(&shader, "scene_tex"),
-        .u_depth_tex       = shader_get_uniform(&shader, "depth_tex"),
+        .u_scene_tex         = shader_get_uniform(&shader, "scene_tex"),
+        .u_depth_tex         = shader_get_uniform(&shader, "depth_tex"),
+                             
+        .u_noise_tex         = shader_get_uniform(&shader, "noise_tex"),
+                             
+        .u_projection        = shader_get_uniform(&shader, "projection"),
+        .u_view              = shader_get_uniform(&shader, "view"),
+                             
+        .u_near_plane        = shader_get_uniform(&shader, "near_plane"),
+        .u_far_plane         = shader_get_uniform(&shader, "far_plane"),
+                             
+        .u_volume_position   = shader_get_uniform(&shader, "position"),
+        .u_volume_size       = shader_get_uniform(&shader, "size"),
+                             
+        .u_camera_pos        = shader_get_uniform(&shader, "camera_pos"),
+        .u_camera_dir        = shader_get_uniform(&shader, "camera_dir"),
 
-        .u_noise_tex       = shader_get_uniform(&shader, "noise_tex"),
-
-        .u_projection      = shader_get_uniform(&shader, "projection"),
-        .u_view            = shader_get_uniform(&shader, "view"),
-
-        .u_near_plane      = shader_get_uniform(&shader, "near_plane"),
-        .u_far_plane       = shader_get_uniform(&shader, "far_plane"),
-
-        .u_volume_position = shader_get_uniform(&shader, "position"),
-        .u_volume_size     = shader_get_uniform(&shader, "size"),
-
-        .u_camera_pos      = shader_get_uniform(&shader, "camera_pos"),
-        .u_camera_dir      = shader_get_uniform(&shader, "camera_dir"),
+        .u_cloud_march_steps = shader_get_uniform(&shader, "cloud_march_steps"),
+        .u_absorption        = shader_get_uniform(&shader, "absorption"),
     };
 }

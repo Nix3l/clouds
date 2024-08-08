@@ -38,14 +38,17 @@ static void generate_volume_perlin_noise(f32* data, cloud_volume_s* volume) {
 
                 f32 res = 0.0f;
                 f32 amp = volume->perlin_amplitude;
+                f32 max_val = 0.0f;
                 for(usize i = 0; i < volume->perlin_octaves; i ++) {
-                    res  += amp * perlin_noise_3d_wrap(input.x, input.y, input.z, 16);
+                    res += amp * perlin_noise_3d_wrap(input.x, input.y, input.z, 16);
+
+                    max_val += amp;
 
                     input = glms_vec3_scale(input, volume->perlin_lacunarity);
                     amp *= volume->perlin_persistence;
                 }
 
-                *(curr++) = res;
+                *(curr++) = (res / max_val);
             }
         }
     }

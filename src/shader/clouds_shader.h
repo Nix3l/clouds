@@ -22,6 +22,13 @@ typedef struct {
 
     uniform_t u_camera_pos;
     uniform_t u_camera_dir;
+
+    uniform_t u_cloud_march_steps;
+
+    uniform_t u_absorption;
+
+    int cloud_march_steps;
+    float absorption;
 } cloud_shader_s;
 
 void init_cloud_shader();

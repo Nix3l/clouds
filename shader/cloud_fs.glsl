@@ -2,6 +2,9 @@
 
 in vec2 fs_uvs;
 
+#define MAX_CLOUD_MARCH_STEPS   16
+#define MAX_SUN_MARCH_STEPS     8
+
 uniform sampler2D scene_tex;
 uniform sampler2D depth_tex;
 
@@ -18,6 +21,10 @@ uniform vec3 size;
 
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
+
+uniform int cloud_march_steps;
+
+uniform float absorption;
 
 out vec4 out_color;
 
@@ -46,6 +53,22 @@ vec2 ray_box_distance(vec3 bounds_min, vec3 bounds_max, vec3 ray_origin, vec3 ra
     return vec2(dist_to_box, dist_through_box);
 }
 
+float march(vec3 pixel_dir, vec3 bounds_min, float box_dist, float interval) {
+    float step_size = interval / (cloud_march_steps > MAX_CLOUD_MARCH_STEPS ? MAX_CLOUD_MARCH_STEPS : cloud_march_steps);
+    vec3 ray_pos = camera_pos - bounds_min + box_dist * pixel_dir;
+
+    float density = 0.0;
+
+    for(int i = 0; i < MAX_CLOUD_MARCH_STEPS; i ++) {
+        if(i >= cloud_march_steps) break;
+
+        ray_pos += pixel_dir * step_size;
+        density += texture(noise_tex, ray_pos / 128).r;
+    }
+
+    return exp(-density * absorption);
+}
+
 void main(void) {
     vec3 scene_color = texture(scene_tex, fs_uvs).rgb;
 
@@ -55,7 +78,7 @@ void main(void) {
 
     // change the depth to linear world space value
     depth = (2.0 * near_plane * far_plane) / (far_plane + near_plane - ndc * (far_plane - near_plane));
-    
+
     // get the pixels direction
     // by moving back from clip space -> world space coordinates
     // NOTE(nix3l): should probably be loaded in from the cpy but im lazy
@@ -73,11 +96,12 @@ void main(void) {
 
     vec2 ray_info = ray_box_distance(bounds_min, bounds_max, camera_pos, pixel_dir);
     if(ray_info.y == 0) {
-        out_color = texture(scene_tex, fs_uvs);
+        out_color = vec4(scene_color, 1.0);
         return;
     }
 
     // TODO(nix3l): raymarch
 
-    out_color = vec4(1.0);
+    float density = march(pixel_dir, bounds_min, ray_info.x, ray_info.y);
+    out_color = vec4(vec3(density), 1.0);
 }

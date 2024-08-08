@@ -3,7 +3,6 @@
 // NOTE(nix3l): https://umu.diva-portal.org/smash/get/diva2:1223894/FULLTEXT01.pdf
 //              ^^ source for most of this
 
-// TODO(nix3l): add wrapping to perlin noise
 // TODO(nix3l): figure out volumetric rendering
 
 #include "game.h"
@@ -101,6 +100,18 @@ static void show_settings_window() {
         igDragScalar("perlin octaves", ImGuiDataType_U32, &volume->perlin_octaves, 0.1f, &min, &max, "%u", ImGuiSliderFlags_None);
 
         igDragFloat("noise persistence", &volume->noise_persistence, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+
+        igPopID();
+    }
+
+    if(igCollapsingHeader_TreeNodeFlags("clouds", ImGuiTreeNodeFlags_None)) {
+        igPushID_Str("cloud_shader_settings");
+        cloud_shader_s* shader = &game_state->cloud_shader;
+
+        u32 min = 1, max = MAX_u32;
+        igDragScalar("cloud raymarch steps", ImGuiDataType_U32, &shader->cloud_march_steps, 0.1f, &min, &max, "%u", ImGuiSliderFlags_None);
+
+        igDragFloat("absorption", &shader->absorption, 0.05f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
         igPopID();
     }
@@ -211,11 +222,15 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     game_state->volume.position = V3F(0.0f, -80.0f, -350.0f);
     game_state->volume.size = V3F(128.0f, 64.0f, 128.0f);
 
-    game_state->volume.perlin_frequency   = 2.0f;
-    game_state->volume.perlin_lacunarity  = 2.4f;
-    game_state->volume.perlin_amplitude   = 0.6f;
-    game_state->volume.perlin_persistence = 0.4f;
-    game_state->volume.perlin_octaves     = 5;
+    game_state->volume.perlin_frequency   = 3.0f;
+    game_state->volume.perlin_lacunarity  = 2.0f;
+    game_state->volume.perlin_amplitude   = 0.5f;
+    game_state->volume.perlin_persistence = 0.5f;
+    game_state->volume.perlin_octaves     = 6;
+    game_state->volume.noise_persistence  = 0.4f;
+
+    game_state->cloud_shader.cloud_march_steps = 8;
+    game_state->cloud_shader.absorption = 0.5f;
 
     // GUI
     init_imgui();
