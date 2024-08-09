@@ -3,7 +3,7 @@
 // NOTE(nix3l): https://umu.diva-portal.org/smash/get/diva2:1223894/FULLTEXT01.pdf
 //              ^^ source for most of this
 
-// TODO(nix3l): figure out volumetric rendering
+// TODO(nix3l): fix blue noise edging
 
 #include "game.h"
 #include "util/log.h"
@@ -109,9 +109,15 @@ static void show_settings_window() {
         cloud_shader_s* shader = &game_state->cloud_shader;
 
         u32 min = 1, max = MAX_u32;
+        igDragFloat("cloud scale", &shader->cloud_scale, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat3("cloud offset", shader->cloud_offset.raw, 0.1f, -MAX_f32, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+
+        igDragFloat("density threshold", &shader->density_threshold, 0.01f, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat("density multiplier", &shader->density_multiplier, 0.05f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+
         igDragScalar("cloud raymarch steps", ImGuiDataType_U32, &shader->cloud_march_steps, 0.1f, &min, &max, "%u", ImGuiSliderFlags_None);
 
-        igDragFloat("absorption", &shader->absorption, 0.05f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat("absorption", &shader->absorption, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
         igPopID();
     }
@@ -220,7 +226,7 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     // VOLUMES
     game_state->volume = create_cloud_volume(128, (v3i) { .x = 8, .y = 16, .z = 32 });
     game_state->volume.position = V3F(0.0f, -80.0f, -350.0f);
-    game_state->volume.size = V3F(128.0f, 64.0f, 128.0f);
+    game_state->volume.size = V3F(1280.0f, 64.0f, 1280.0f);
 
     game_state->volume.perlin_frequency   = 3.0f;
     game_state->volume.perlin_lacunarity  = 2.0f;
@@ -229,7 +235,15 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     game_state->volume.perlin_octaves     = 6;
     game_state->volume.noise_persistence  = 0.4f;
 
-    game_state->cloud_shader.cloud_march_steps = 8;
+    game_state->cloud_shader.noise_resolution = 128;
+
+    game_state->cloud_shader.cloud_scale = 10.0f;
+    game_state->cloud_shader.cloud_offset = V3F_ZERO();
+
+    game_state->cloud_shader.density_threshold = 0.7f;
+    game_state->cloud_shader.density_multiplier = 1.0f;
+
+    game_state->cloud_shader.cloud_march_steps = 16;
     game_state->cloud_shader.absorption = 0.5f;
 
     // GUI

@@ -90,8 +90,7 @@ float remap(float v, float l0, float h0, float ln, float hn) {
 void main(void) {
     vec3 normalised_position = vec3(gl_GlobalInvocationID) / float(resolution);
 
-    // cheating...
-    float perlin = (perlin_data[flatten_index(ivec3(gl_GlobalInvocationID), resolution)] - .5) * 2;
+    float perlin = perlin_data[flatten_index(ivec3(gl_GlobalInvocationID), resolution)];
     
     int ld_points = int(pow(worley_cpa.x, 3));
     int md_points = int(pow(worley_cpa.y, 3));

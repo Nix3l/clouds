@@ -17,17 +17,17 @@ static void load_image_stb(char* filepath, GLenum target, texture_s* texture) {
 
     // always assume 16 bit float values because who even cares
     if(num_channels == 1) {
-        internal_format = GL_RED;
-        format = GL_R16F;
+        format = GL_RED;
+        internal_format = GL_R16F;
     } else if(num_channels == 2) {
-        internal_format = GL_RG;
-        format = GL_RG16F;
+        format = GL_RG;
+        internal_format = GL_RG16F;
     } else if(num_channels == 3) {
-        internal_format = GL_RGB;
-        format = GL_RGB16F;
+        format = GL_RGB;
+        internal_format = GL_RGB16F;
     } else if(num_channels == 4) {
-        internal_format = GL_RGBA;
-        format = GL_RGBA16F;
+        format = GL_RGBA;
+        internal_format = GL_RGBA16F;
     } else {
         LOG_ERR("error loading num of channels in texture [%s]\n", filepath);
         stbi_image_free(data);
@@ -72,6 +72,9 @@ texture_s create_texture(char* filename, arena_s* arena) {
 
     // TODO(nix3l): parameters
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+
     glBindTexture(GL_TEXTURE_2D, 0);
     return texture;
 }
@@ -103,8 +106,8 @@ texture_3d_s create_texture_3d(i32 width, i32 height, i32 depth, void* data) {
             GL_UNSIGNED_BYTE,
             data);
 
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glBindTexture(GL_TEXTURE_3D, 0);
     return texture;
@@ -137,8 +140,8 @@ texture_3d_s create_texture_3d_format(i32 width, i32 height, i32 depth, GLenum i
             GL_UNSIGNED_BYTE,
             data);
 
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);

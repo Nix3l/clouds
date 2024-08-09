@@ -6,9 +6,11 @@
 typedef struct {
     shader_s program;
 
+    // uniforms
     uniform_t u_scene_tex;
     uniform_t u_depth_tex;
 
+    uniform_t u_blue_noise_tex;
     uniform_t u_noise_tex;
 
     uniform_t u_projection;
@@ -23,12 +25,28 @@ typedef struct {
     uniform_t u_camera_pos;
     uniform_t u_camera_dir;
 
+
+    uniform_t u_noise_resolution;
+
+    uniform_t u_cloud_scale;
+    uniform_t u_cloud_offset;
+    uniform_t u_density_threshold;
+    uniform_t u_density_multiplier;
+
     uniform_t u_cloud_march_steps;
 
     uniform_t u_absorption;
 
-    int cloud_march_steps;
-    float absorption;
+    // parameters 
+    i32 noise_resolution;
+
+    f32 cloud_scale;
+    v3f cloud_offset;
+    f32 density_threshold;
+    f32 density_multiplier;
+
+    i32 cloud_march_steps;
+    f32 absorption;
 } cloud_shader_s;
 
 void init_cloud_shader();

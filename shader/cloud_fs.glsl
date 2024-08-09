@@ -1,13 +1,16 @@
 #version 330 core
 
+// TODO(nix3l): IDEA!! make the step size change depending on the density of the cloud at the point when marching
+
 in vec2 fs_uvs;
 
-#define MAX_CLOUD_MARCH_STEPS   16
-#define MAX_SUN_MARCH_STEPS     8
+#define MAX_CLOUD_MARCH_STEPS   32
+#define MAX_SUN_MARCH_STEPS     16
 
 uniform sampler2D scene_tex;
 uniform sampler2D depth_tex;
 
+uniform sampler2D blue_noise_tex;
 uniform sampler3D noise_tex;
 
 uniform mat4 projection;
@@ -21,6 +24,13 @@ uniform vec3 size;
 
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
+
+uniform int noise_resolution;
+
+uniform float cloud_scale;
+uniform vec3 cloud_offset;
+uniform float density_threshold;
+uniform float density_multiplier;
 
 uniform int cloud_march_steps;
 
@@ -53,20 +63,42 @@ vec2 ray_box_distance(vec3 bounds_min, vec3 bounds_max, vec3 ray_origin, vec3 ra
     return vec2(dist_to_box, dist_through_box);
 }
 
-float march(vec3 pixel_dir, vec3 bounds_min, float box_dist, float interval) {
-    float step_size = interval / (cloud_march_steps > MAX_CLOUD_MARCH_STEPS ? MAX_CLOUD_MARCH_STEPS : cloud_march_steps);
+float sample_density(vec3 position) {
+    vec3 uvw = (position + cloud_offset * 10.0) * cloud_scale * 0.01 / noise_resolution;
+    return max(0, texture(noise_tex, uvw).r - density_threshold) * density_multiplier;
+}
+
+// returns the density at the pixel and the light transimttance to said pixel
+vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, float box_dist, float interval) {
     vec3 ray_pos = camera_pos - bounds_min + box_dist * pixel_dir;
 
-    float density = 0.0;
+    int scatter_points = cloud_march_steps > MAX_CLOUD_MARCH_STEPS ? MAX_CLOUD_MARCH_STEPS : cloud_march_steps;
+    float step_size = interval / scatter_points;
 
+    // offset the initial ray march position by a random blue noise value
+    // to avoid banding artifacts
+    float bn = texture(blue_noise_tex, fs_uvs).r;
+    ray_pos += (bn - 0.5) * 2 * step_size;
+
+    float density = 0.0;
+    float transmittance = 1.0;
     for(int i = 0; i < MAX_CLOUD_MARCH_STEPS; i ++) {
-        if(i >= cloud_march_steps) break;
+        if(i >= cloud_march_steps) break; // kind of cheating a dynamic loop condition here
 
         ray_pos += pixel_dir * step_size;
-        density += texture(noise_tex, ray_pos / 128).r;
+        float point_density = sample_density(ray_pos);
+        float point_transmittance = exp(-point_density * absorption);
+
+        density += point_density;
+        transmittance *= point_transmittance;
+
+        // transmittance calculating per point in order to add this optimisation
+        // if the transmittance at the current point is too low, then marching further
+        // is likely not going to result in a noticeable effect
+        if(point_transmittance <= 0.01) break;
     }
 
-    return exp(-density * absorption);
+    return vec2(density, transmittance);
 }
 
 void main(void) {
@@ -81,7 +113,7 @@ void main(void) {
 
     // get the pixels direction
     // by moving back from clip space -> world space coordinates
-    // NOTE(nix3l): should probably be loaded in from the cpy but im lazy
+    // NOTE(nix3l): should probably be loaded in from the cpu but im lazy
     mat4 unprojection = inverse(projection * mat4(mat3(view)));
     // range of uvs changed from [0.0, 1.0] -> [-1.0, 1.0]
     // -1.0 on the z-axis because we look out on the -ve z-axis
@@ -95,13 +127,14 @@ void main(void) {
     vec3 bounds_max = position + size / 2;
 
     vec2 ray_info = ray_box_distance(bounds_min, bounds_max, camera_pos, pixel_dir);
-    if(ray_info.y == 0) {
+    if(ray_info.y == 0 || ray_info.x > depth) {
         out_color = vec4(scene_color, 1.0);
         return;
     }
 
-    // TODO(nix3l): raymarch
+    vec2 cloud_info = cloud_march(pixel_dir, bounds_min, ray_info.x, ray_info.y);
+    float density = max(0, cloud_info.x);
+    float transmittance = cloud_info.y;
 
-    float density = march(pixel_dir, bounds_min, ray_info.x, ray_info.y);
-    out_color = vec4(vec3(density), 1.0);
+    out_color = vec4(scene_color * transmittance + density, 1.0);
 }

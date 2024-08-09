@@ -10,6 +10,8 @@
 typedef struct {
     fbo_s back_buffer;
 
+    texture_s blue_noise_tex;
+
     compute_shader_s noise_compute;
 
     uniform_t u_resolution;
