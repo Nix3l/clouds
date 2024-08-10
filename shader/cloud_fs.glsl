@@ -5,7 +5,7 @@
 in vec2 fs_uvs;
 
 #define MAX_CLOUD_MARCH_STEPS   32
-#define MAX_SUN_MARCH_STEPS     16
+#define MAX_SUN_MARCH_STEPS     8
 
 uniform sampler2D scene_tex;
 uniform sampler2D depth_tex;
@@ -35,9 +35,11 @@ uniform float density_threshold;
 uniform float density_multiplier;
 
 uniform float max_march_dist;
-uniform int cloud_march_steps;
+uniform float march_step_size;
 
 uniform float absorption;
+
+uniform float edge_falloff;
 
 out vec4 out_color;
 
@@ -71,34 +73,45 @@ float sample_density(vec3 position) {
     return max(0, texture(noise_tex, uvw).r - density_threshold) * density_multiplier;
 }
 
+float length2(vec3 v) {
+    return dot(v, v);
+}
+
 // returns the density at the pixel and the light transimttance to said pixel
 vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, vec3 bounds_max, float box_dist, float interval) {
     vec3 ray_pos = camera_pos - bounds_min + box_dist * pixel_dir;
 
-    int scatter_points = cloud_march_steps > MAX_CLOUD_MARCH_STEPS ? MAX_CLOUD_MARCH_STEPS : cloud_march_steps;
-    float step_size = max_march_dist / scatter_points;
-
     // offset the initial ray march position by a random blue noise value
     // to avoid banding artifacts
     float bn = texture(blue_noise_tex, fs_uvs).r;
-    ray_pos += (bn - 0.5) * 2 * step_size;
+    ray_pos += (bn - 0.5) * 2 * march_step_size;
+
+    // TODO(nix3l): scale -> 0 towards edges, add height gradient
+    float density_scale = 1.0;
+
+    float dist_travelled = 0.0;
 
     float density = 0.0;
     float transmittance = 1.0;
     for(int i = 0; i < MAX_CLOUD_MARCH_STEPS; i ++) {
-        if(i >= cloud_march_steps) break; // kind of cheating a dynamic loop condition here
+        if(dist_travelled >= max_march_dist) break;
 
-        ray_pos += pixel_dir * step_size;
-        float point_density = sample_density(ray_pos);
-        float point_transmittance = exp(-point_density * absorption);
+        ray_pos += pixel_dir * march_step_size;
 
-        density += point_density;
-        transmittance *= point_transmittance;
+        float point_density = sample_density(ray_pos) * density_scale;
+        if(point_density > 0) {
+            float point_transmittance = exp(-point_density * absorption);
 
-        // transmittance calculating per point in order to add this optimisation
-        // if the transmittance at the current point is too low, then marching further
-        // is likely not going to result in a noticeable effect
-        if(point_transmittance <= 0.01) break;
+            density += point_density;
+            transmittance *= point_transmittance;
+
+            // transmittance calculating per point in order to add this optimisation
+            // if the transmittance at the current point is too low, then marching further
+            // is likely not going to result in a noticeable effect
+            if(point_transmittance <= 0.01) break;
+        }
+
+        dist_travelled += march_step_size;
     }
 
     return vec2(density, transmittance);
