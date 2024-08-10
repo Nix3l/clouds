@@ -30,6 +30,8 @@ static void load_uniforms(void* _data) {
     shader_load_vec3(shader->u_camera_pos, game_state->camera.position);
     shader_load_vec3(shader->u_camera_dir, game_state->camera.rotation);
 
+    shader_load_float(shader->u_time, game_state->curr_time);
+
     shader_load_int(shader->u_noise_resolution, shader->noise_resolution);
 
     shader_load_float(shader->u_cloud_scale, shader->cloud_scale);
@@ -38,6 +40,7 @@ static void load_uniforms(void* _data) {
     shader_load_float(shader->u_density_threshold, shader->density_threshold);
     shader_load_float(shader->u_density_multiplier, shader->density_multiplier);
 
+    shader_load_float(shader->u_max_march_dist, shader->max_march_dist);
     shader_load_int(shader->u_cloud_march_steps, shader->cloud_march_steps);
 
     shader_load_float(shader->u_absorption, shader->absorption);
@@ -73,7 +76,9 @@ void init_cloud_shader() {
                               
         .u_camera_pos         = shader_get_uniform(&shader, "camera_pos"),
         .u_camera_dir         = shader_get_uniform(&shader, "camera_dir"),
-                              
+
+        .u_time               = shader_get_uniform(&shader, "time"),
+
         .u_noise_resolution   = shader_get_uniform(&shader, "noise_resolution"),
                               
         .u_cloud_scale        = shader_get_uniform(&shader, "cloud_scale"),
@@ -81,6 +86,8 @@ void init_cloud_shader() {
                               
         .u_density_threshold  = shader_get_uniform(&shader, "density_threshold"),
         .u_density_multiplier = shader_get_uniform(&shader, "density_multiplier"),
+
+        .u_max_march_dist = shader_get_uniform(&shader, "max_march_dist"),
 
         .u_cloud_march_steps  = shader_get_uniform(&shader, "cloud_march_steps"),
         .u_absorption         = shader_get_uniform(&shader, "absorption"),

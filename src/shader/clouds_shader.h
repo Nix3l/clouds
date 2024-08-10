@@ -25,6 +25,7 @@ typedef struct {
     uniform_t u_camera_pos;
     uniform_t u_camera_dir;
 
+    uniform_t u_time;
 
     uniform_t u_noise_resolution;
 
@@ -32,6 +33,8 @@ typedef struct {
     uniform_t u_cloud_offset;
     uniform_t u_density_threshold;
     uniform_t u_density_multiplier;
+
+    uniform_t u_max_march_dist;
 
     uniform_t u_cloud_march_steps;
 
@@ -44,6 +47,8 @@ typedef struct {
     v3f cloud_offset;
     f32 density_threshold;
     f32 density_multiplier;
+
+    f32 max_march_dist;
 
     i32 cloud_march_steps;
     f32 absorption;

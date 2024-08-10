@@ -25,6 +25,8 @@ uniform vec3 size;
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
 
+uniform float time;
+
 uniform int noise_resolution;
 
 uniform float cloud_scale;
@@ -32,6 +34,7 @@ uniform vec3 cloud_offset;
 uniform float density_threshold;
 uniform float density_multiplier;
 
+uniform float max_march_dist;
 uniform int cloud_march_steps;
 
 uniform float absorption;
@@ -64,16 +67,16 @@ vec2 ray_box_distance(vec3 bounds_min, vec3 bounds_max, vec3 ray_origin, vec3 ra
 }
 
 float sample_density(vec3 position) {
-    vec3 uvw = (position + cloud_offset * 10.0) * cloud_scale * 0.01 / noise_resolution;
+    vec3 uvw = (position + (cloud_offset + vec3(time, time*0.1, time*0.33)) * 10.0) * cloud_scale * 0.01 / noise_resolution;
     return max(0, texture(noise_tex, uvw).r - density_threshold) * density_multiplier;
 }
 
 // returns the density at the pixel and the light transimttance to said pixel
-vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, float box_dist, float interval) {
+vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, vec3 bounds_max, float box_dist, float interval) {
     vec3 ray_pos = camera_pos - bounds_min + box_dist * pixel_dir;
 
     int scatter_points = cloud_march_steps > MAX_CLOUD_MARCH_STEPS ? MAX_CLOUD_MARCH_STEPS : cloud_march_steps;
-    float step_size = interval / scatter_points;
+    float step_size = max_march_dist / scatter_points;
 
     // offset the initial ray march position by a random blue noise value
     // to avoid banding artifacts
@@ -132,9 +135,9 @@ void main(void) {
         return;
     }
 
-    vec2 cloud_info = cloud_march(pixel_dir, bounds_min, ray_info.x, ray_info.y);
+    vec2 cloud_info = cloud_march(pixel_dir, bounds_min, bounds_max, ray_info.x, ray_info.y);
     float density = max(0, cloud_info.x);
     float transmittance = cloud_info.y;
 
-    out_color = vec4(scene_color * transmittance + density, 1.0);
+    out_color = vec4((scene_color + density) * transmittance, 1.0);
 }

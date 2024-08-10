@@ -115,6 +115,7 @@ static void show_settings_window() {
         igDragFloat("density threshold", &shader->density_threshold, 0.01f, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_None);
         igDragFloat("density multiplier", &shader->density_multiplier, 0.05f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
+        igDragFloat("max march dist", &shader->max_march_dist, 0.05f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
         igDragScalar("cloud raymarch steps", ImGuiDataType_U32, &shader->cloud_march_steps, 0.1f, &min, &max, "%u", ImGuiSliderFlags_None);
 
         igDragFloat("absorption", &shader->absorption, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
@@ -243,8 +244,9 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     game_state->cloud_shader.density_threshold = 0.7f;
     game_state->cloud_shader.density_multiplier = 1.0f;
 
-    game_state->cloud_shader.cloud_march_steps = 16;
-    game_state->cloud_shader.absorption = 0.5f;
+    game_state->cloud_shader.max_march_dist = 120.0f;
+    game_state->cloud_shader.cloud_march_steps = 12;
+    game_state->cloud_shader.absorption = 0.65f;
 
     // GUI
     init_imgui();
