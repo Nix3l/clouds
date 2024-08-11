@@ -1,11 +1,12 @@
 #version 330 core
 
 // TODO(nix3l): IDEA!! make the step size change depending on the density of the cloud at the point when marching
+// TODO(nix3l): IDEA!! add an exponent parameter to the density to decrease banding effects
 
 in vec2 fs_uvs;
 
-#define MAX_CLOUD_MARCH_STEPS   32
-#define MAX_SUN_MARCH_STEPS     8
+#define MAX_CLOUD_MARCH_STEPS   128
+#define MAX_SUN_MARCH_STEPS     12
 
 uniform sampler2D scene_tex;
 uniform sampler2D depth_tex;
@@ -25,6 +26,10 @@ uniform vec3 size;
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
 
+uniform vec3  light_color;
+uniform vec3  light_dir;
+uniform float light_intensity;
+
 uniform float time;
 
 uniform int noise_resolution;
@@ -36,6 +41,7 @@ uniform float density_multiplier;
 
 uniform float max_march_dist;
 uniform float march_step_size;
+uniform int light_march_steps;
 
 uniform float absorption;
 
@@ -77,12 +83,33 @@ float length2(vec3 v) {
     return dot(v, v);
 }
 
+float light_march(vec3 pos) {
+    // float step_size = 0.5 * size.y / light_march_steps;
+    float step_size = 0.8 * march_step_size;
+
+    // pretty much the same as the way we calculate the transmittance for a pixel
+    // except it is towards the sun
+    // used for approximating in-scattering
+    float transmittance = 1.0;
+    vec3 point = pos;
+    for(int i = 0; i < MAX_SUN_MARCH_STEPS; i ++) {
+        if(i >= light_march_steps) break;
+
+        float density = sample_density(pos);
+        transmittance *= exp(-density * step_size * absorption);
+
+        pos += -light_dir * step_size;
+    }
+
+    return transmittance;
+}
+
 // returns the density at the pixel and the light transimttance to said pixel
 vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, vec3 bounds_max, float box_dist, float interval) {
     vec3 ray_pos = camera_pos - bounds_min + box_dist * pixel_dir;
 
     // offset the initial ray march position by a random blue noise value
-    // to avoid banding artifacts
+    // to decrease banding artifacts
     float bn = texture(blue_noise_tex, fs_uvs).r;
     ray_pos += (bn - 0.5) * 2 * march_step_size;
 
@@ -91,30 +118,28 @@ vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, vec3 bounds_max, float box_dis
 
     float dist_travelled = 0.0;
 
-    float density = 0.0;
+    float lighting = 0.0;
     float transmittance = 1.0;
-    for(int i = 0; i < MAX_CLOUD_MARCH_STEPS; i ++) {
-        if(dist_travelled >= max_march_dist) break;
-
+    for(;dist_travelled < max_march_dist;) {
         ray_pos += pixel_dir * march_step_size;
 
         float point_density = sample_density(ray_pos) * density_scale;
         if(point_density > 0) {
-            float point_transmittance = exp(-point_density * absorption);
+            float point_transmittance = exp(-point_density * march_step_size * absorption);
+            float light_transmittance = light_march(ray_pos);
 
-            density += point_density;
+            lighting += point_density * light_transmittance * transmittance * march_step_size;
             transmittance *= point_transmittance;
 
-            // transmittance calculating per point in order to add this optimisation
             // if the transmittance at the current point is too low, then marching further
-            // is likely not going to result in a noticeable effect
-            if(point_transmittance <= 0.01) break;
+            // is likely not going to result in a noticeable effect, so stop
+            if(transmittance <= 0.01) break;
         }
 
         dist_travelled += march_step_size;
     }
 
-    return vec2(density, transmittance);
+    return vec2(lighting, transmittance);
 }
 
 void main(void) {
@@ -149,8 +174,8 @@ void main(void) {
     }
 
     vec2 cloud_info = cloud_march(pixel_dir, bounds_min, bounds_max, ray_info.x, ray_info.y);
-    float density = max(0, cloud_info.x);
+    float lighting = max(0, cloud_info.x);
     float transmittance = cloud_info.y;
 
-    out_color = vec4((scene_color + density) * transmittance, 1.0);
+    out_color = vec4(scene_color * transmittance + lighting * light_intensity * light_color, 1.0);
 }

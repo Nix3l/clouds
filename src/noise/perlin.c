@@ -14,18 +14,6 @@ static f32 lerp(f32 t0, f32 t1, f32 w) {
     return t0 + (t1 - t0) * w;
 }
 
-// https://www.beosil.com/download/CollisionDetectionHashing_VMV03.pdf
-static u32 cell_hash(i32 x, i32 y, i32 z) {
-    u32 hash;
-
-    hash  = x * 73856093;
-    hash ^= y * 19349663;
-    hash ^= z * 83492791;
-    hash %= MAX_u32;
-    
-    return hash;
-}
-
 // idk perlin made this ask him
 static f32 grad(i32 hash, f32 x, f32 y, f32 z) {
     i32 h = hash & 15;
@@ -33,7 +21,7 @@ static f32 grad(i32 hash, f32 x, f32 y, f32 z) {
     
     f32 v = h < 4 ? y : h == 12 || h == 14 ? x : z;
     
-    return ((h&1) == 0 ? u : -u) + ((h&2) == 0 ? v : -v);
+    return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
 }
 
 f32 perlin_noise_3d(f32 x, f32 y, f32 z) {
@@ -78,7 +66,7 @@ f32 perlin_noise_3d(f32 x, f32 y, f32 z) {
     f32 fy = fade(ry);
     f32 fz = fade(rz);
 
-    int aaa, aba, aab, abb, baa, bba, bab, bbb;
+    i32 aaa, aba, aab, abb, baa, bba, bab, bbb;
     aaa = p[p[p[cx    ] + cy    ] + cz    ];
     aba = p[p[p[cx    ] + cy + 1] + cz    ];
     aab = p[p[p[cx    ] + cy    ] + cz + 1];
@@ -146,7 +134,7 @@ f32 perlin_noise_3d_wrap(f32 x, f32 y, f32 z, i32 wrap) {
     f32 fz = fade(rz);
 
     i32 aaa, aba, aab, abb, baa, bba, bab, bbb;
-    
+
     i32 cxw = (cx + 1) % wrap;
     i32 cyw = (cy + 1) % wrap;
     i32 czw = (cz + 1) % wrap;

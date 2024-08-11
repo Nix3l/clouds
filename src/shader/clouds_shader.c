@@ -27,6 +27,10 @@ static void load_uniforms(void* _data) {
     shader_load_vec3(shader->u_volume_position, volume->position);
     shader_load_vec3(shader->u_volume_size, volume->size);
 
+    shader_load_vec3(shader->u_light_color, game_state->sun.color);
+    shader_load_vec3(shader->u_light_dir, game_state->sun.direction);
+    shader_load_float(shader->u_light_intensity, game_state->sun.intensity);
+
     shader_load_vec3(shader->u_camera_pos, game_state->camera.position);
     shader_load_vec3(shader->u_camera_dir, game_state->camera.rotation);
 
@@ -42,6 +46,7 @@ static void load_uniforms(void* _data) {
 
     shader_load_float(shader->u_step_size, shader->step_size);
     shader_load_float(shader->u_max_march_dist, shader->max_march_dist);
+    shader_load_int(shader->u_light_march_steps, shader->light_march_steps);
 
     shader_load_float(shader->u_absorption, shader->absorption);
 
@@ -75,7 +80,11 @@ void init_cloud_shader() {
                               
         .u_volume_position    = shader_get_uniform(&shader, "position"),
         .u_volume_size        = shader_get_uniform(&shader, "size"),
-                              
+
+        .u_light_color        = shader_get_uniform(&shader, "light_color"),
+        .u_light_dir          = shader_get_uniform(&shader, "light_dir"),
+        .u_light_intensity    = shader_get_uniform(&shader, "light_intensity"),
+
         .u_camera_pos         = shader_get_uniform(&shader, "camera_pos"),
         .u_camera_dir         = shader_get_uniform(&shader, "camera_dir"),
 
@@ -91,6 +100,7 @@ void init_cloud_shader() {
 
         .u_step_size          = shader_get_uniform(&shader, "march_step_size"),
         .u_max_march_dist     = shader_get_uniform(&shader, "max_march_dist"),
+        .u_light_march_steps  = shader_get_uniform(&shader, "light_march_steps"),
 
         .u_absorption         = shader_get_uniform(&shader, "absorption"),
 

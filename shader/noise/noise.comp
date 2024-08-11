@@ -72,11 +72,11 @@ float enumerate_worley_points(vec3 position, int cpa, int index_offset) {
             if(cell_index[c] == cpa - 1 && offset[c] == 1) offset[c] = 1 - cpa;
         }
 
-        float dst = dist2(position, point_at_index(cell + offset, ivec3(cell) + offset, cpa, index_offset));
+        float dst = sqrt(dist2(position, point_at_index(cell + offset, cell_index + offset, cpa, index_offset)));
         min_dst = min(min_dst, dst);
     }
 
-    return 1.0f - clamp(cpa * sqrt(min_dst), 0.0f, 1.0f);
+    return 1.0f - clamp(cpa * min_dst, 0.0f, 1.0f);
 }
 
 // remaps a value from one range to another

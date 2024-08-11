@@ -3,7 +3,7 @@
 // NOTE(nix3l): https://umu.diva-portal.org/smash/get/diva2:1223894/FULLTEXT01.pdf
 //              ^^ source for most of this
 
-// TODO(nix3l): fix blue noise edging
+// TODO(nix3l): fix noise tiling
 
 #include "game.h"
 #include "util/log.h"
@@ -117,10 +117,22 @@ static void show_settings_window() {
 
         igDragFloat("step size", &shader->step_size, 1.00f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
         igDragFloat("max march dist", &shader->max_march_dist, 1.00f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+        igDragInt("light march steps", &shader->light_march_steps, 0.1f, 0, 12, "%d", ImGuiSliderFlags_None);
 
         igDragFloat("absorption", &shader->absorption, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
         igDragFloat("edge falloff", &shader->edge_falloff, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+
+        igPopID();
+    }
+
+    if(igCollapsingHeader_TreeNodeFlags("sun", ImGuiTreeNodeFlags_None)) {
+        igPushID_Str("sun");
+
+        igDragFloat3("sun direction", game_state->sun.direction.raw, 0.01f, -1.0f, 1.0f, "%.2f", ImGuiSliderFlags_None);
+        igColorEdit3("sun color", game_state->sun.color.raw, ImGuiColorEditFlags_None);
+
+        igDragFloat("sun intensity", &game_state->sun.intensity, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
         igPopID();
     }
@@ -202,9 +214,9 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
         
         .fov        = 70.0f,
         .near_plane = 0.001f,
-        .far_plane  = 1500.0f,
+        .far_plane  = 2048.0f,
 
-        .speed      = 100.0f,
+        .speed      = 200.0f,
         .sens       = 7500.0f
     };
 
@@ -233,22 +245,24 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
 
     game_state->volume.perlin_frequency   = 3.0f;
     game_state->volume.perlin_lacunarity  = 2.0f;
-    game_state->volume.perlin_amplitude   = 0.5f;
-    game_state->volume.perlin_persistence = 0.5f;
-    game_state->volume.perlin_octaves     = 6;
-    game_state->volume.noise_persistence  = 0.4f;
+    game_state->volume.perlin_amplitude   = 0.4f;
+    game_state->volume.perlin_persistence = 0.6f;
+    game_state->volume.perlin_octaves     = 8;
+    game_state->volume.noise_persistence  = 0.5f;
 
     game_state->cloud_shader.noise_resolution = 128;
 
-    game_state->cloud_shader.cloud_scale = 10.0f;
+    game_state->cloud_shader.cloud_scale = 4.0f;
     game_state->cloud_shader.cloud_offset = V3F_ZERO();
 
     game_state->cloud_shader.density_threshold = 0.7f;
-    game_state->cloud_shader.density_multiplier = 1.0f;
+    game_state->cloud_shader.density_multiplier = 0.6f;
 
-    game_state->cloud_shader.step_size = 10.0f;
-    game_state->cloud_shader.max_march_dist = 1024.0f;
-    game_state->cloud_shader.absorption = 0.65f;
+    game_state->cloud_shader.step_size = 16.0f;
+    game_state->cloud_shader.max_march_dist = 512.0f;
+    game_state->cloud_shader.light_march_steps = 5;
+
+    game_state->cloud_shader.absorption = 1.0f;
     game_state->cloud_shader.edge_falloff = 1.0f;
 
     // GUI
@@ -283,7 +297,7 @@ int main(void) {
         update_camera(&game_state->camera);
 
         // RENDER
-        fbo_clear(&game_state->screen_buffer, V3F(0.098f, 0.11f, 0.11f), GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        fbo_clear(&game_state->screen_buffer, V3F_RGB(43.0f, 133.0f, 182.0f), GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         render_cloud_volume(&game_state->volume, &game_state->screen_buffer);
 
         fbo_copy_texture_to_screen(&game_state->screen_buffer, GL_COLOR_ATTACHMENT0);

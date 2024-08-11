@@ -22,6 +22,10 @@ typedef struct {
     uniform_t u_volume_position;
     uniform_t u_volume_size;
 
+    uniform_t u_light_color;
+    uniform_t u_light_dir;
+    uniform_t u_light_intensity;
+
     uniform_t u_camera_pos;
     uniform_t u_camera_dir;
 
@@ -37,6 +41,7 @@ typedef struct {
 
     uniform_t u_step_size;
     uniform_t u_max_march_dist;
+    uniform_t u_light_march_steps;
 
     uniform_t u_absorption;
 
@@ -52,6 +57,7 @@ typedef struct {
 
     f32 step_size;
     f32 max_march_dist;
+    i32 light_march_steps;
 
     f32 absorption;
 
