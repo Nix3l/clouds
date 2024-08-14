@@ -3,10 +3,13 @@
 // TODO(nix3l): IDEA!! make the step size change depending on the density of the cloud at the point when marching
 // TODO(nix3l): IDEA!! add an exponent parameter to the density to decrease banding effects
 
+// TODO(nix3l): figure out better fix for step size
+// TODO(nix3l): edge falloff and height gradient
+// TODO(nix3l): ambient light approximation
+
 in vec2 fs_uvs;
 
-#define MAX_CLOUD_MARCH_STEPS   128
-#define MAX_SUN_MARCH_STEPS     12
+#define MAX_SUN_MARCH_STEPS 12
 
 uniform sampler2D scene_tex;
 uniform sampler2D depth_tex;
@@ -39,13 +42,17 @@ uniform vec3 cloud_offset;
 uniform float density_threshold;
 uniform float density_multiplier;
 
-uniform float max_march_dist;
+uniform float global_density;
+
+uniform int march_steps;
+
 uniform float march_step_size;
 uniform int light_march_steps;
 
 uniform float absorption;
 
 uniform float edge_falloff;
+uniform float height_falloff;
 
 out vec4 out_color;
 
@@ -104,39 +111,57 @@ float light_march(vec3 pos) {
     return transmittance;
 }
 
+float edge_scale(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
+    float x_dist  = min(edge_falloff, min(ray_pos.x - bounds_min.x, bounds_max.x - ray_pos.x));
+    float z_dist  = min(edge_falloff, min(ray_pos.z - bounds_min.z, bounds_max.z - ray_pos.z));
+    float xz_dist = min(x_dist, z_dist);
+    return max(0.0, xz_dist / edge_falloff);
+}
+
+float height_gradient(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
+    float y_dist = min(height_falloff, min(ray_pos.x - bounds_min.y, bounds_max.y - ray_pos.y));
+    return max(0.0, y_dist / height_falloff);
+}
+
+float remap(float v, float l0, float h0, float ln, float hn) {
+    return ln + ((v - l0) * (hn - ln)) / (h0 - l0);
+}
+
 // returns the density at the pixel and the light transimttance to said pixel
 vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, vec3 bounds_max, float box_dist, float interval) {
     vec3 ray_pos = camera_pos - bounds_min + box_dist * pixel_dir;
 
+    float dist_travelled = 0.0;
+
+    float step_size = interval / march_steps;
+    float max_dist = interval; // < max_march_dist ? interval : max_march_dist;
+
     // offset the initial ray march position by a random blue noise value
     // to decrease banding artifacts
     float bn = texture(blue_noise_tex, fs_uvs).r;
-    ray_pos += (bn - 0.5) * 2 * march_step_size;
-
-    // TODO(nix3l): scale -> 0 towards edges, add height gradient
-    float density_scale = 1.0;
-
-    float dist_travelled = 0.0;
+    ray_pos += (bn - 0.5) * 2 * step_size;
 
     float lighting = 0.0;
     float transmittance = 1.0;
-    for(;dist_travelled < max_march_dist;) {
-        ray_pos += pixel_dir * march_step_size;
+    for(int i = 0; dist_travelled < max_dist; i ++) {
+        ray_pos += pixel_dir * step_size;
+        dist_travelled += step_size;
 
-        float point_density = sample_density(ray_pos) * density_scale;
-        if(point_density > 0) {
-            float point_transmittance = exp(-point_density * march_step_size * absorption);
+        float point_density = sample_density(ray_pos);
+        if(point_density > 0.0) {
+            point_density *= edge_scale(ray_pos + bounds_min, bounds_min, bounds_max);
+            point_density *= height_gradient(ray_pos + bounds_min, bounds_min, bounds_max);
+
+            float point_transmittance = exp(-point_density * step_size * absorption);
             float light_transmittance = light_march(ray_pos);
 
-            lighting += point_density * light_transmittance * transmittance * march_step_size;
+            lighting += point_density * light_transmittance * transmittance * step_size;
             transmittance *= point_transmittance;
 
             // if the transmittance at the current point is too low, then marching further
             // is likely not going to result in a noticeable effect, so stop
             if(transmittance <= 0.01) break;
         }
-
-        dist_travelled += march_step_size;
     }
 
     return vec2(lighting, transmittance);

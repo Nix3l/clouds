@@ -38,14 +38,17 @@ typedef struct {
     uniform_t u_density_threshold;
     uniform_t u_density_multiplier;
 
+    uniform_t u_global_density;
+
+    uniform_t u_march_steps;
 
     uniform_t u_step_size;
-    uniform_t u_max_march_dist;
     uniform_t u_light_march_steps;
 
     uniform_t u_absorption;
 
     uniform_t u_edge_falloff;
+    uniform_t u_height_falloff;
 
     // parameters 
     i32 noise_resolution;
@@ -55,13 +58,16 @@ typedef struct {
     f32 density_threshold;
     f32 density_multiplier;
 
+    f32 global_density;
+
+    i32 march_steps;
     f32 step_size;
-    f32 max_march_dist;
     i32 light_march_steps;
 
     f32 absorption;
 
     f32 edge_falloff;
+    f32 height_falloff;
 } cloud_shader_s;
 
 void init_cloud_shader();

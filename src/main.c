@@ -112,16 +112,19 @@ static void show_settings_window() {
         igDragFloat("cloud scale", &shader->cloud_scale, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
         igDragFloat3("cloud offset", shader->cloud_offset.raw, 0.1f, -MAX_f32, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
-        igDragFloat("density threshold", &shader->density_threshold, 0.01f, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat("density threshold", &shader->density_threshold, 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
         igDragFloat("density multiplier", &shader->density_multiplier, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
+        igDragFloat("global density", &shader->global_density, 0.01f, 0.0f, 1.0f, "%.2f", ImGuiSliderFlags_None);
+
+        igDragInt("march steps", &shader->march_steps, 0.1f, 0, MAX_i32, "%d", ImGuiSliderFlags_None);
         igDragFloat("step size", &shader->step_size, 1.00f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
-        igDragFloat("max march dist", &shader->max_march_dist, 1.00f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
         igDragInt("light march steps", &shader->light_march_steps, 0.1f, 0, 12, "%d", ImGuiSliderFlags_None);
 
         igDragFloat("absorption", &shader->absorption, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
-        igDragFloat("edge falloff", &shader->edge_falloff, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat("edge falloff", &shader->edge_falloff, 1.0f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
+        igDragFloat("height falloff", &shader->height_falloff, 1.0f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
         igPopID();
     }
@@ -241,7 +244,7 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     // VOLUMES
     game_state->volume = create_cloud_volume(128, (v3i) { .x = 8, .y = 16, .z = 32 });
     game_state->volume.position = V3F(0.0f, -80.0f, -350.0f);
-    game_state->volume.size = V3F(1280.0f, 64.0f, 1280.0f);
+    game_state->volume.size = V3F(1280.0f, 500.0f, 1280.0f);
 
     game_state->volume.perlin_frequency   = 3.0f;
     game_state->volume.perlin_lacunarity  = 2.0f;
@@ -258,12 +261,15 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     game_state->cloud_shader.density_threshold = 0.7f;
     game_state->cloud_shader.density_multiplier = 0.6f;
 
+    game_state->cloud_shader.global_density = 1.0f;
+
+    game_state->cloud_shader.march_steps = 48;
     game_state->cloud_shader.step_size = 16.0f;
-    game_state->cloud_shader.max_march_dist = 512.0f;
     game_state->cloud_shader.light_march_steps = 5;
 
     game_state->cloud_shader.absorption = 1.0f;
-    game_state->cloud_shader.edge_falloff = 1.0f;
+    game_state->cloud_shader.edge_falloff = 100.0f;
+    game_state->cloud_shader.height_falloff = 600.0f;
 
     // GUI
     init_imgui();

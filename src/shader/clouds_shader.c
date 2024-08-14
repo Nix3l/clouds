@@ -44,13 +44,16 @@ static void load_uniforms(void* _data) {
     shader_load_float(shader->u_density_threshold, shader->density_threshold);
     shader_load_float(shader->u_density_multiplier, shader->density_multiplier);
 
+    shader_load_float(shader->u_global_density, shader->global_density);
+
+    shader_load_int(shader->u_march_steps, shader->march_steps);
     shader_load_float(shader->u_step_size, shader->step_size);
-    shader_load_float(shader->u_max_march_dist, shader->max_march_dist);
     shader_load_int(shader->u_light_march_steps, shader->light_march_steps);
 
     shader_load_float(shader->u_absorption, shader->absorption);
 
     shader_load_float(shader->u_edge_falloff, shader->edge_falloff);
+    shader_load_float(shader->u_height_falloff, shader->height_falloff);
 }
 
 void init_cloud_shader() {
@@ -98,12 +101,15 @@ void init_cloud_shader() {
         .u_density_threshold  = shader_get_uniform(&shader, "density_threshold"),
         .u_density_multiplier = shader_get_uniform(&shader, "density_multiplier"),
 
+        .u_global_density     = shader_get_uniform(&shader, "global_density"),
+
+        .u_march_steps        = shader_get_uniform(&shader, "march_steps"),
         .u_step_size          = shader_get_uniform(&shader, "march_step_size"),
-        .u_max_march_dist     = shader_get_uniform(&shader, "max_march_dist"),
         .u_light_march_steps  = shader_get_uniform(&shader, "light_march_steps"),
 
         .u_absorption         = shader_get_uniform(&shader, "absorption"),
 
         .u_edge_falloff       = shader_get_uniform(&shader, "edge_falloff"),
+        .u_height_falloff     = shader_get_uniform(&shader, "height_falloff"),
     };
 }

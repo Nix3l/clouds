@@ -65,7 +65,7 @@ float enumerate_worley_points(vec3 position, int cpa, int index_offset) {
     for(int i = 0; i < 27; i ++) {
         ivec3 offset = worley_offsets[i];
 
-        // wrap offset
+        // wrap offset to make the texture tile
         ivec3 cell_index = ivec3(cell);
         for(int c = 0; c < 3; c ++) {
             if(cell_index[c] == 0 && offset[c] == -1) offset[c] = cpa - 1;
