@@ -11,6 +11,7 @@ typedef struct {
     fbo_s back_buffer;
 
     texture_s blue_noise_tex;
+    texture_s weather_map_tex;
 
     compute_shader_s noise_compute;
 

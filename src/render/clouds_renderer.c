@@ -12,6 +12,9 @@ void init_cloud_renderer() {
         .blue_noise_tex = create_texture(
                 "blue_noise.png",
                 &game_state->texture_arena),
+        .weather_map_tex = create_texture(
+                "weather_map.png",
+                &game_state->texture_arena),
         .noise_compute = load_and_create_compute_shader(
                 "shader/noise/noise.comp",
                 (v3i) { .x = 16, .y = 16, .z = 16 },
@@ -156,8 +159,12 @@ void render_cloud_volume(cloud_volume_s* volume, fbo_s* target_buffer) {
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, game_state->cloud_renderer.blue_noise_tex.id);
 
-    // noise 
+    // blue noise
     glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, game_state->cloud_renderer.weather_map_tex.id);
+
+    // noise 
+    glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_3D, volume->noise_texture.id);
 
     glBindVertexArray(quad->vao);

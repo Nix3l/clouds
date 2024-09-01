@@ -11,6 +11,7 @@ typedef struct {
     uniform_t u_depth_tex;
 
     uniform_t u_blue_noise_tex;
+    uniform_t u_wmap_tex;
     uniform_t u_noise_tex;
 
     uniform_t u_projection;
@@ -38,14 +39,13 @@ typedef struct {
     uniform_t u_density_threshold;
     uniform_t u_density_multiplier;
 
-    uniform_t u_global_density;
-
     uniform_t u_march_steps;
 
     uniform_t u_step_size;
     uniform_t u_light_march_steps;
 
     uniform_t u_absorption;
+    uniform_t u_phase_coefficient;
 
     uniform_t u_edge_falloff;
     uniform_t u_height_falloff;
@@ -58,13 +58,12 @@ typedef struct {
     f32 density_threshold;
     f32 density_multiplier;
 
-    f32 global_density;
-
     i32 march_steps;
     f32 step_size;
     i32 light_march_steps;
 
     f32 absorption;
+    f32 phase_coefficient;
 
     f32 edge_falloff;
     f32 height_falloff;

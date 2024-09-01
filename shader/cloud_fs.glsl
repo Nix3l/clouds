@@ -4,17 +4,20 @@
 // TODO(nix3l): IDEA!! add an exponent parameter to the density to decrease banding effects
 
 // TODO(nix3l): figure out better fix for step size
-// TODO(nix3l): edge falloff and height gradient
+// TODO(nix3l): phase function
 // TODO(nix3l): ambient light approximation
 
 in vec2 fs_uvs;
 
 #define MAX_SUN_MARCH_STEPS 12
+#define FOUR_PI 12.56637061
 
 uniform sampler2D scene_tex;
 uniform sampler2D depth_tex;
 
 uniform sampler2D blue_noise_tex;
+
+uniform sampler2D weather_map_tex;
 uniform sampler3D noise_tex;
 
 uniform mat4 projection;
@@ -42,19 +45,26 @@ uniform vec3 cloud_offset;
 uniform float density_threshold;
 uniform float density_multiplier;
 
-uniform float global_density;
-
 uniform int march_steps;
 
 uniform float march_step_size;
 uniform int light_march_steps;
 
 uniform float absorption;
+uniform float phase_coefficient;
 
 uniform float edge_falloff;
 uniform float height_falloff;
 
 out vec4 out_color;
+
+float remap(float v, float l0, float h0, float ln, float hn) {
+    return ln + ((v - l0) * (hn - ln)) / (h0 - l0);
+}
+
+float sat(float x) {
+    return clamp(x, 0.0, 1.0);
+}
 
 // returns the distance to the box (x)
 // and distance through the box (y)
@@ -81,18 +91,43 @@ vec2 ray_box_distance(vec3 bounds_min, vec3 bounds_max, vec3 ray_origin, vec3 ra
     return vec2(dist_to_box, dist_through_box);
 }
 
-float sample_density(vec3 position) {
-    vec3 uvw = (position + (cloud_offset + vec3(time, time*0.1, time*0.33)) * 10.0) * cloud_scale * 0.01 / noise_resolution;
-    return max(0, texture(noise_tex, uvw).r - density_threshold) * density_multiplier;
+float weather_map_coverage(vec2 pos) {
+    vec2 wm = texture(weather_map_tex, pos / 512).rg;
+    return max(wm.r, 2.0 * sat(density_threshold - 0.5) * wm.g);
 }
 
-float length2(vec3 v) {
-    return dot(v, v);
+float shape_height_factor(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
+    float wh = texture(weather_map_tex, ray_pos.xz / 512).b;
+    float ph = (ray_pos.y - bounds_min.y) / (bounds_max.y - bounds_min.y);
+    float SRb = sat(remap(ph, 0.0, 0.07, 0.0, 1.0));
+    float SRt = sat(remap(ph, wh * 0.2, wh, 1.0, 0.0));
+
+    return SRb * SRt;
+}
+
+float density_height_factor(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
+    float wd = texture(weather_map_tex, ray_pos.xz / 512).a;
+    float ph = (ray_pos.y - bounds_min.y) / (bounds_max.y - bounds_min.y);
+    float DRb = ph * sat(remap(ph, 0.0, 0.15, 0.0, 1.0));
+    float DRt = sat(remap(ph, 0.9, 1.0, 1.0, 0.0));
+
+    return density_multiplier * DRb * DRt * wd * 2.0;
+}
+
+float sample_density(vec3 ray_pos) {
+    vec3 uvw = (ray_pos + (cloud_offset + vec3(time, time*0.1, time*0.33)) * 10.0) * cloud_scale * 0.01;
+    float coverage = weather_map_coverage(uvw.xz);
+    float sh_factor = shape_height_factor(uvw, position - size / 2.0, position + size / 2.0);
+    float dh_factor = density_height_factor(uvw, position - size / 2.0, position + size / 2.0);
+    float density = texture(noise_tex, uvw / noise_resolution).r;
+
+    return max(0.0, density - density_threshold) * density_multiplier;
+    return sat(remap(density * sh_factor, 1.0 - density_threshold * coverage, 1.0, 0.0, 1.0)) * dh_factor;
 }
 
 float light_march(vec3 pos) {
-    // float step_size = 0.5 * size.y / light_march_steps;
-    float step_size = 0.8 * march_step_size;
+    float step_size = 0.5 * size.y / light_march_steps;
+    // float step_size = 0.8 * march_step_size;
 
     // pretty much the same as the way we calculate the transmittance for a pixel
     // except it is towards the sun
@@ -119,12 +154,10 @@ float edge_scale(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
 }
 
 float height_gradient(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
-    float y_dist = min(height_falloff, min(ray_pos.x - bounds_min.y, bounds_max.y - ray_pos.y));
-    return max(0.0, y_dist / height_falloff);
-}
-
-float remap(float v, float l0, float h0, float ln, float hn) {
-    return ln + ((v - l0) * (hn - ln)) / (h0 - l0);
+    // float y_dist = min(height_falloff, min(ray_pos.x - bounds_min.y, bounds_max.y - ray_pos.y));
+    // return max(0.0, y_dist / height_falloff);
+    float py = (ray_pos.y - bounds_min.y) / (bounds_max.y - bounds_min.y);
+    return exp(-py * height_falloff) * (1.0 - py);
 }
 
 // returns the density at the pixel and the light transimttance to said pixel
@@ -138,8 +171,8 @@ vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, vec3 bounds_max, float box_dis
 
     // offset the initial ray march position by a random blue noise value
     // to decrease banding artifacts
-    float bn = texture(blue_noise_tex, fs_uvs).r;
-    ray_pos += (bn - 0.5) * 2 * step_size;
+    float bn = texture(blue_noise_tex, fs_uvs * 16).r;
+    // ray_pos += (bn - 0.5) * 2 * step_size;
 
     float lighting = 0.0;
     float transmittance = 1.0;
@@ -147,10 +180,10 @@ vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, vec3 bounds_max, float box_dis
         ray_pos += pixel_dir * step_size;
         dist_travelled += step_size;
 
-        float point_density = sample_density(ray_pos);
+        float point_density = sample_density(ray_pos * cloud_scale);
         if(point_density > 0.0) {
-            point_density *= edge_scale(ray_pos + bounds_min, bounds_min, bounds_max);
-            point_density *= height_gradient(ray_pos + bounds_min, bounds_min, bounds_max);
+            // point_density *= edge_scale(ray_pos + bounds_min, bounds_min, bounds_max);
+            // point_density *= height_gradient(ray_pos + bounds_min, bounds_min, bounds_max);
 
             float point_transmittance = exp(-point_density * step_size * absorption);
             float light_transmittance = light_march(ray_pos);
@@ -164,7 +197,12 @@ vec2 cloud_march(vec3 pixel_dir, vec3 bounds_min, vec3 bounds_max, float box_dis
         }
     }
 
-    return vec2(lighting, transmittance);
+    // henyey-greenstein phase coefficient for approximating in-scattering and creating a silver lining effect
+    float rdotl = dot(pixel_dir, -light_dir);
+    float g = phase_coefficient;
+    float p_hg = (1.0 - g * g) / (FOUR_PI * pow(1.0 + g * g - 2.0 * g * rdotl, 1.5));
+
+    return vec2(lighting /*p_hg*/, transmittance);
 }
 
 void main(void) {
