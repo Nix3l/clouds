@@ -36,7 +36,7 @@ typedef struct {
 
     uniform_t u_cloud_scale;
     uniform_t u_cloud_offset;
-    uniform_t u_density_threshold;
+    uniform_t u_global_coverage;
     uniform_t u_density_multiplier;
 
     uniform_t u_march_steps;
@@ -55,7 +55,7 @@ typedef struct {
 
     f32 cloud_scale;
     v3f cloud_offset;
-    f32 density_threshold;
+    f32 global_coverage;
     f32 density_multiplier;
 
     i32 march_steps;

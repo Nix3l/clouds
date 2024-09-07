@@ -42,7 +42,7 @@ static void load_uniforms(void* _data) {
     shader_load_float(shader->u_cloud_scale, shader->cloud_scale);
     shader_load_vec3(shader->u_cloud_offset, shader->cloud_offset);
 
-    shader_load_float(shader->u_density_threshold, shader->density_threshold);
+    shader_load_float(shader->u_global_coverage, shader->global_coverage);
     shader_load_float(shader->u_density_multiplier, shader->density_multiplier);
 
     shader_load_int(shader->u_march_steps, shader->march_steps);
@@ -99,7 +99,7 @@ void init_cloud_shader() {
         .u_cloud_scale        = shader_get_uniform(&shader, "cloud_scale"),
         .u_cloud_offset       = shader_get_uniform(&shader, "cloud_offset"),
                               
-        .u_density_threshold  = shader_get_uniform(&shader, "density_threshold"),
+        .u_global_coverage    = shader_get_uniform(&shader, "global_coverage"),
         .u_density_multiplier = shader_get_uniform(&shader, "density_multiplier"),
 
         .u_march_steps        = shader_get_uniform(&shader, "march_steps"),

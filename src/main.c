@@ -112,7 +112,7 @@ static void show_settings_window() {
         igDragFloat("cloud scale", &shader->cloud_scale, 0.1f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
         igDragFloat3("cloud offset", shader->cloud_offset.raw, 0.1f, -MAX_f32, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
-        igDragFloat("density threshold", &shader->density_threshold, 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+        igDragFloat("global coverage", &shader->global_coverage, 0.001f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
         igDragFloat("density multiplier", &shader->density_multiplier, 0.01f, 0.0f, MAX_f32, "%.2f", ImGuiSliderFlags_None);
 
         igDragInt("march steps", &shader->march_steps, 0.1f, 0, MAX_i32, "%d", ImGuiSliderFlags_None);
@@ -257,7 +257,7 @@ static void init_game_state(usize permenant_memory_to_allocate, usize transient_
     game_state->cloud_shader.cloud_scale = 4.0f;
     game_state->cloud_shader.cloud_offset = V3F_ZERO();
 
-    game_state->cloud_shader.density_threshold = 0.7f;
+    game_state->cloud_shader.global_coverage = 0.7f;
     game_state->cloud_shader.density_multiplier = 0.6f;
 
     game_state->cloud_shader.march_steps = 48;

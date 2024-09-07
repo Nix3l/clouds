@@ -42,7 +42,7 @@ uniform int noise_resolution;
 
 uniform float cloud_scale;
 uniform vec3 cloud_offset;
-uniform float density_threshold;
+uniform float global_coverage;
 uniform float density_multiplier;
 
 uniform int march_steps;
@@ -91,9 +91,9 @@ vec2 ray_box_distance(vec3 bounds_min, vec3 bounds_max, vec3 ray_origin, vec3 ra
     return vec2(dist_to_box, dist_through_box);
 }
 
-float weather_map_coverage(vec2 pos) {
-    vec2 wm = texture(weather_map_tex, pos / 512).rg;
-    return max(wm.r, 2.0 * sat(density_threshold - 0.5) * wm.g);
+float weather_map_coverage(vec3 ray_pos) {
+    vec2 wm = texture(weather_map_tex, ray_pos.xz / 512).rg;
+    return max(wm.x, 2.0 * sat(global_coverage - 0.5) * wm.y);
 }
 
 float shape_height_factor(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
@@ -116,13 +116,12 @@ float density_height_factor(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
 
 float sample_density(vec3 ray_pos) {
     vec3 uvw = (ray_pos + (cloud_offset + vec3(time, time*0.1, time*0.33)) * 10.0) * cloud_scale * 0.01;
-    float coverage = weather_map_coverage(uvw.xz);
+    float coverage  = weather_map_coverage(uvw);
     float sh_factor = shape_height_factor(uvw, position - size / 2.0, position + size / 2.0);
     float dh_factor = density_height_factor(uvw, position - size / 2.0, position + size / 2.0);
-    float density = texture(noise_tex, uvw / noise_resolution).r;
+    float density   = texture(noise_tex, uvw / noise_resolution).r;
 
-    return max(0.0, density - density_threshold) * density_multiplier;
-    return sat(remap(density * sh_factor, 1.0 - density_threshold * coverage, 1.0, 0.0, 1.0)) * dh_factor;
+    return sat(remap(density * sh_factor, 1.0 - global_coverage, 1.0, 0.0, 1.0)) * dh_factor;
 }
 
 float light_march(vec3 pos) {
