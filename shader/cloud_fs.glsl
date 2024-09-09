@@ -92,22 +92,20 @@ vec2 ray_box_distance(vec3 bounds_min, vec3 bounds_max, vec3 ray_origin, vec3 ra
 }
 
 float weather_map_coverage(vec3 ray_pos) {
-    vec2 wm = texture(weather_map_tex, ray_pos.xz / 512).rg;
-    return max(wm.x, 2.0 * sat(global_coverage - 0.5) * wm.y);
+    vec2 wc = texture(weather_map_tex, ray_pos.xz / 512).rg;
+    return max(wc.x, 2.0 * sat(global_coverage - 0.5) * wc.y);
 }
 
-float shape_height_factor(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
+float shape_height_factor(vec3 ray_pos, float ph) {
     float wh = texture(weather_map_tex, ray_pos.xz / 512).b;
-    float ph = (ray_pos.y - bounds_min.y) / (bounds_max.y - bounds_min.y);
     float SRb = sat(remap(ph, 0.0, 0.07, 0.0, 1.0));
     float SRt = sat(remap(ph, wh * 0.2, wh, 1.0, 0.0));
 
     return SRb * SRt;
 }
 
-float density_height_factor(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
+float density_height_factor(vec3 ray_pos, float ph) {
     float wd = texture(weather_map_tex, ray_pos.xz / 512).a;
-    float ph = (ray_pos.y - bounds_min.y) / (bounds_max.y - bounds_min.y);
     float DRb = ph * sat(remap(ph, 0.0, 0.15, 0.0, 1.0));
     float DRt = sat(remap(ph, 0.9, 1.0, 1.0, 0.0));
 
@@ -116,17 +114,21 @@ float density_height_factor(vec3 ray_pos, vec3 bounds_min, vec3 bounds_max) {
 
 float sample_density(vec3 ray_pos) {
     vec3 uvw = (ray_pos + (cloud_offset + vec3(time, time*0.1, time*0.33)) * 10.0) * cloud_scale * 0.01;
-    float coverage  = weather_map_coverage(uvw);
-    float sh_factor = shape_height_factor(uvw, position - size / 2.0, position + size / 2.0);
-    float dh_factor = density_height_factor(uvw, position - size / 2.0, position + size / 2.0);
-    float density   = texture(noise_tex, uvw / noise_resolution).r;
 
-    return sat(remap(density * sh_factor, 1.0 - global_coverage, 1.0, 0.0, 1.0)) * dh_factor;
+    float coverage  = weather_map_coverage(uvw);
+
+    float ph = ray_pos.y / size.y;
+    float sh_factor = shape_height_factor(uvw, ph);
+    float dh_factor = density_height_factor(uvw, ph);
+    
+    float density = texture(noise_tex, uvw / noise_resolution).r;
+
+    return sat(remap(density * sh_factor, 1.0 - coverage * global_coverage, 1.0, 0.0, 1.0)) * dh_factor;
 }
 
 float light_march(vec3 pos) {
-    float step_size = 0.5 * size.y / light_march_steps;
-    // float step_size = 0.8 * march_step_size;
+    // float step_size = 0.5 * size.y / light_march_steps;
+    float step_size = 0.8 * march_step_size;
 
     // pretty much the same as the way we calculate the transmittance for a pixel
     // except it is towards the sun
